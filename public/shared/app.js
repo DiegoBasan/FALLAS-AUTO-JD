@@ -1,5 +1,5 @@
 /* Comportamiento de app (iPhone "Agregar a inicio" / Android "Instalar"):
-   - barra de pestañas de abajo (estilo iOS, glass, de lado a lado) igual en todas las secciones
+   - barra de pestañas flotante estilo iOS 26 (cápsula de vidrio casi de lado a lado) igual en todas las secciones
    - service worker único (/sw.js) para que abra rápido y funcione sin señal
    - marca <html class="standalone"> cuando corre como app instalada
    Uso: <script src="/shared/app.js" defer></script>. Una página sin menú pone <body data-nonav>. */
