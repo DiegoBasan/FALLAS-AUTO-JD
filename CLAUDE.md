@@ -29,15 +29,20 @@ Se muestran como un puntito con la inicial al final del dato; leyenda al pie de 
 ## Colores por máquina
 Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` · Hornos `#8A8A90` · General `#5E6B78`.
 
-## Siguiente fase (lo que pidió Diego)
-1. **Login con número de control** (+ PIN; por defecto cada quien crea su PIN la primera vez, Diego da de alta el número y el nivel). Niveles: operador, técnico, ingeniero, admin.
-2. **Procedimientos por nivel**: Diego marca qué guías ve cada rango.
-3. **Aportaciones** por falla y por paso: comentario, foto, corrección, solución diferente, duda.
-   - Se guardan como *pendientes* y se muestran a todos con bandera "Aportación · pendiente", separadas de lo confirmado.
-   - Panel admin: aprobar (queda integrada con el nombre de quien la hizo) o rechazar con nota.
-   - Página "Mis aportaciones" y ver lo que aportó cada usuario.
-4. Mover detrás del login: manual, `privado/`, GIFs de videos, contraseñas de equipo (Engineer / Windows) — hoy NO están en el repo.
-5. Almacenamiento: Netlify Blobs (usuarios, aportaciones, fotos) + Netlify Functions (auth con cookie firmada, CRUD). Plan Free.
+## Cuentas, aportaciones y admin (YA FUNCIONA)
+- `netlify/edge-functions/puerta.ts`: todo el sitio pide sesión (cookie firmada `jdf_s`), salvo `/login/` y `/api/*`. `/admin/` solo nivel admin.
+- `netlify/functions/api.mts` (todo bajo `/api/*`): login / crear contraseña la primera vez / logout / cambiar contraseña, aportaciones (crear, listar por `ref`, mías, de un usuario; admin: aprobar, rechazar, borrar), fotos, actividad (vistas y búsquedas por usuario y por día), stats, usuarios, accesos por nivel, tema ntfy.
+- `netlify/lib/auth.mts` (HMAC + PBKDF2, Web Crypto) y `netlify/lib/secreto.mts` (llave de sesión y tema ntfy generados por el servidor y guardados en Blobs `config`; nunca en el código).
+- Blobs: `usuarios`, `aportaciones` (clave `<ref>/<id>`, ref = `kasalis:<falla>`, `kasalis-p:<guía>`, `linea:<falla>`, `linea-p:<proceso>`), `fotos`, `actividad` (`<YYYY-MM-DD>/<num>`), `config`.
+- Admin inicial: número 4019461 (Diego), ya activado. Niveles: operador, tecnico, ingeniero, admin. Cada usuario nuevo crea su contraseña la primera vez.
+- Cliente: `public/shared/cuenta.js` (sesión, `track`, botón flotante ＋ Aportar, tarjetas de aportación, "Mis aportaciones"). Panel: `public/admin/index.html` (Aportaciones · Actividad · Usuarios · Accesos por nivel · Notificaciones).
+- Notificaciones: push con ntfy (tema en el panel → Notificaciones) y correo con Netlify Forms (formulario oculto `aportacion` en `public/index.html`; activar en Netlify → Notifications).
+- Plan gratis de Netlify: inyecta el aviso "Powered by Netlify" abajo a la derecha (no se puede ocultar en ese plan). La barra de pestañas deja una franja libre para él.
+- Deploy: hoy se publica con el comando del MCP de Netlify (`deploy-site`) con `NODE_USE_ENV_PROXY=1`. Cuando el repo esté en GitHub, conectarlo en Netlify para publicar al hacer push.
+
+## Ideas siguientes
+- Integrar aportaciones confirmadas al contenido base (pasar a `fallas.js` con la marca del autor).
+- Borrar usuarios, exportar actividad a CSV, búsqueda en el panel.
 
 ## Pendientes de contenido
 - Videos de entrenamiento (Jacob): Diego los sube a Google Drive; hacer GIFs por sección del desglose en `data/debug.js`.
