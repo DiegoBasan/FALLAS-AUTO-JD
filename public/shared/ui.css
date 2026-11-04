@@ -35,14 +35,14 @@ mark{background:rgba(110,92,230,.22);color:inherit;border-radius:4px;padding:0 2
   --glass-shadow:0 10px 34px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.06);
   --glass-on:rgba(0,0,0,.065);
   /* barra de pestañas iOS 26: cápsula de vidrio flotante, casi de lado a lado, encima de la barra de inicio */
-  --nav-side:14px; --nav-gap:max(env(safe-area-inset-bottom) - 8px, 12px); --nav-pill:64px;
+  --nav-side:14px; --nav-gap:max(env(safe-area-inset-bottom) - 13px, 8px); /* 5 px más abajo que el margen automático */ --nav-pill:64px;
   --nav-h:calc(var(--nav-pill) + var(--nav-gap));
   --fab-b:calc(var(--nav-h) + 14px);
   --pad-b:calc(var(--nav-h) + 28px);
 }
 :root[data-theme="dark"]{ --glass:rgba(40,40,42,.55); --glass-line:rgba(255,255,255,.16); --glass-edge:rgba(0,0,0,.4);
   --glass-shadow:0 10px 34px rgba(0,0,0,.55); --glass-on:rgba(255,255,255,.12); }
-html{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+html{-webkit-text-size-adjust:100%}
 body{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button,.gnav,.seg,[data-go],.mode,.row,.link,.tile{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 @view-transition{navigation:auto}

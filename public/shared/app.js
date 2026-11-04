@@ -8,7 +8,11 @@
   if(standalone) document.documentElement.classList.add('standalone');
   if(/iPhone|iPad|iPod/.test(navigator.userAgent)) document.documentElement.classList.add('ios');
 
-  if('serviceWorker' in navigator) addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){}); });
+  if('serviceWorker' in navigator){
+    addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){}); });
+    // al regresar la señal: bajar lo que haya cambiado o falte
+    addEventListener('online', function(){ navigator.serviceWorker.ready.then(function(r){ r.active && r.active.postMessage('refrescar'); }); });
+  }
 
   var I = {
     inicio:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
