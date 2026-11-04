@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin · JD Fallas</title><meta name="theme-color" content="#f2f2f3">
+<script src="/shared/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/ui.css">
+<style>
+:root{--bar:#2F6BFF}
+[data-theme=dark]{--bar:#6E9BFF}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px 60px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.top h1{flex:1;margin:0;font-size:24px;letter-spacing:-.4px}
+.top a{color:inherit;font-weight:700;text-decoration:none;font-size:14px}
+nav.tb{display:flex;gap:6px;overflow-x:auto;margin:0 0 16px;scrollbar-width:none}
+nav.tb button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:99px;padding:9px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+nav.tb button.on{background:var(--ink);color:var(--bg);border-color:transparent}
+nav.tb .ct{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:#E0A32E;color:#111;font-size:11.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+h3{margin:18px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.flt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.flt button{border:1px solid var(--line);background:none;color:inherit;border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.flt button.on{background:var(--ink);color:var(--bg)}
+.ap{background:var(--surface);border:1px solid var(--line);border-left:5px solid #E0A32E;border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.ap.aprobada{border-left-color:#22A06B} .ap.rechazada{border-left-color:#9a9aa0;opacity:.75}
+.ap .t{font-weight:700} .ap .t a{color:inherit}
+.ap .m{font-size:12.5px;color:var(--ink2);margin:2px 0 8px}
+.ap .x{font-size:14.5px;line-height:1.5;white-space:pre-wrap}
+.ap img{max-width:min(420px,100%);max-height:320px;border-radius:12px;margin-top:8px;display:block;cursor:zoom-in}
+.ap .rev{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.ap .rev input{flex:1 1 220px;min-width:0;border:1px solid var(--line);border-radius:12px;padding:9px 11px;font:inherit;font-size:14px;background:var(--bg);color:inherit}
+.btn{border:1.5px solid var(--line);background:none;color:inherit;border-radius:99px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.btn.ok{background:#22A06B;color:#fff;border-color:transparent} .btn.no{background:rgba(229,72,77,.1);color:#C2292E;border-color:rgba(229,72,77,.4)}
+.btn.dk{background:var(--ink);color:var(--bg);border-color:transparent}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px}
+.kpi b{display:block;font-size:28px;letter-spacing:-.5px} .kpi span{font-size:12.5px;color:var(--ink2)}
+.chart{display:flex;align-items:flex-end;gap:2px;height:150px;padding:8px 4px 0;border-bottom:1px solid var(--line)}
+.chart .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative;cursor:default}
+.chart .c i{display:block;background:var(--bar);border-radius:4px 4px 0 0;min-height:2px}
+.chart .c:hover i{filter:brightness(1.15)}
+.chart .c .tt{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:8px;white-space:nowrap;z-index:2}
+.chart .c:hover .tt{display:block}
+.xl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3);margin-top:4px}
+.rk{display:grid;gap:4px}
+.rk div{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:8px;align-items:center;font-size:14px;padding:4px 2px}
+.rk div span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
+.rk div span u{position:absolute;left:0;top:0;bottom:0;background:color-mix(in srgb,var(--bar) 16%,transparent);border-radius:6px;z-index:0}
+.rk div span em{position:relative;z-index:1;font-style:normal;padding-left:6px}
+.rk div b{text-align:right;font-variant-numeric:tabular-nums}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:9px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);border-top:0}
+td.n{font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+select,input.in{border:1px solid var(--line);border-radius:10px;padding:7px 9px;font:inherit;font-size:14px;background:var(--bg);color:inherit}
+.alta{display:flex;gap:8px;flex-wrap:wrap}
+.alta input,.alta select{flex:1 1 140px;min-width:0}
+.faint{color:var(--ink3)} .muted{color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:700;z-index:50}
+.empty{padding:16px;color:var(--ink2)}
+</style></head><body><main>
+<div class="top"><h1>Panel de administración</h1><a href="/">Inicio ›</a><button class="ibtn" data-theme-toggle></button></div>
+<nav class="tb" id="tabs">
+  <button data-t="ap" class="on">Aportaciones <span class="ct" id="ctPend" hidden></span></button>
+  <button data-t="act">Actividad</button>
+  <button data-t="us">Usuarios</button>
+  <button data-t="niv">Accesos por nivel</button>
+  <button data-t="not">Notificaciones</button>
+</nav>
+<div id="out"></div>
+</main>
+<script type="module">
+import {PROCS} from '/buscador-kasalis/data/procedimientos.js';
+import {PROCESOS} from '/fallas-linea/data/lineas.js';
+import {TIPOS} from '/shared/cuenta.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const plain = s => String(s??'').replace(/\{\{|\}\}/g,'').replace(/\[\[[dmlje]:|\]\]/g,'');
+const NIV = {operador:'Operador', tecnico:'Técnico', ingeniero:'Ingeniero', admin:'Admin'};
+const fecha = iso => new Date(iso).toLocaleString('es-MX', {day:'numeric', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+const toast = t => { const d = document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(), 2400); };
+async function api(path, opt={}){ const r = await fetch('/api/'+path, {...opt, headers:{'content-type':'application/json'}}); const j = await r.json().catch(()=>({})); if(r.status===401) location.href='/login/?next=/admin/'; if(!r.ok) throw new Error(j.error||'Error'); return j; }
+const link = a => { const [k, id] = a.ref.split(':'); const base = k.startsWith('kasalis') ? '/buscador-kasalis/' : '/fallas-linea/'; return `${base}#${k.endsWith('-p') ? 'p' : 'f'}/${id}`; };
+
+let tab = 'ap', filtro = 'pendiente', APS = [];
+async function contarPend(){ try{ APS = (await api('aportaciones')).aportaciones; const n = APS.filter(a=>a.estado==='pendiente').length; $('ctPend').hidden = !n; $('ctPend').textContent = n; }catch{} }
+
+async function vAportes(){
+  await contarPend();
+  const lst = filtro==='todas' ? APS : APS.filter(a=>a.estado===filtro);
+  const cnt = e => APS.filter(a=>e==='todas'||a.estado===e).length;
+  $('out').innerHTML = `<div class="flt">${['pendiente','aprobada','rechazada','todas'].map(e=>`<button data-f="${e}" class="${filtro===e?'on':''}">${{pendiente:'Pendientes',aprobada:'Confirmadas',rechazada:'Rechazadas',todas:'Todas'}[e]} (${cnt(e)})</button>`).join('')}</div>
+    ${lst.map(a=>{ const [ic, tl] = TIPOS[a.tipo]||['💬','Comentario']; return `<div class="ap ${a.estado}">
+      <div class="t">${ic} ${tl} · <a href="${link(a)}" target="_blank">${esc(a.titulo)}</a>${a.paso?` · paso ${a.paso}`:''}</div>
+      <div class="m"><b>${esc(a.nombre)}</b> (No. ${esc(a.num)}) · ${fecha(a.fecha)}${a.pasoTxt?` · “${esc(a.pasoTxt)}”`:''}${a.revisado?` · ${a.estado==='aprobada'?'confirmada':'revisada'} por ${esc(a.revisado.por)} el ${fecha(a.revisado.fecha)}`:''}</div>
+      ${a.texto?`<div class="x">${esc(a.texto)}</div>`:''}${a.foto?`<img loading="lazy" src="/api/foto/${esc(a.foto)}" alt="">`:''}
+      <div class="rev"><input placeholder="Nota (opcional; la ve quien aportó)" value="${esc(a.nota||'')}" data-nota="${esc(a.id)}">
+        ${a.estado!=='aprobada'?`<button class="btn ok" data-est="aprobada" data-id="${esc(a.id)}">✓ Confirmar</button>`:''}
+        ${a.estado!=='rechazada'?`<button class="btn no" data-est="rechazada" data-id="${esc(a.id)}">✕ Rechazar</button>`:''}
+        ${a.estado!=='pendiente'?`<button class="btn" data-est="pendiente" data-id="${esc(a.id)}">Regresar a pendiente</button>`:''}
+        <button class="btn" data-borrar="${esc(a.id)}">Borrar</button></div></div>`; }).join('') || '<div class="empty">No hay aportaciones aquí.</div>'}`;
+}
+
+async function vActividad(dias=7){
+  $('out').innerHTML = '<div class="empty">Cargando actividad…</div>';
+  const [st, us] = await Promise.all([api('stats?dias='+dias), api('usuarios')]);
+  await contarPend();
+  const fechas = Object.keys(st.porDia).sort();
+  const max = Math.max(1, ...fechas.map(f=>st.porDia[f].vistas));
+  const tot = fechas.reduce((a,f)=>({u:a.u, v:a.v+st.porDia[f].vistas, b:a.b+st.porDia[f].busquedas}), {u:0,v:0,b:0});
+  const activos = st.usuarios.length, hoyF = fechas[fechas.length-1];
+  const apsPor = {}; APS.forEach(a=>{ apsPor[a.num] = (apsPor[a.num]||0)+1; });
+  const nombre = {}; us.usuarios.forEach(u=>nombre[u.num]=u.nombre);
+  const rk = (rows, lab, val) => { const m = Math.max(1, ...rows.map(val)); return `<div class="rk">${rows.map(r=>`<div><span><u style="width:${val(r)/m*100}%"></u><em>${esc(lab(r))}</em></span><b>${val(r)}</b></div>`).join('') || '<div class="faint">Sin datos todavía.</div>'}</div>`; };
+  const fmtD = f => new Date(f+'T12:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+  $('out').innerHTML = `<div class="flt">${[7,30,90].map(d=>`<button data-dias="${d}" class="${d===dias?'on':''}">Últimos ${d} días</button>`).join('')}</div>
+    <div class="kpis"><div class="kpi"><b>${st.porDia[hoyF]?.usuarios||0}</b><span>usuarios hoy</span></div><div class="kpi"><b>${activos}</b><span>usuarios en ${dias} días</span></div>
+      <div class="kpi"><b>${tot.v}</b><span>páginas vistas</span></div><div class="kpi"><b>${tot.b}</b><span>búsquedas</span></div><div class="kpi"><b>${APS.length}</b><span>aportaciones (total)</span></div></div>
+    <div class="card"><h3 style="margin-top:0">Páginas vistas por día</h3><div class="chart">${fechas.map(f=>{ const d = st.porDia[f]; return `<div class="c"><div class="tt">${fmtD(f)}: ${d.vistas} vistas · ${d.usuarios} usuarios · ${d.busquedas} búsquedas</div><i style="height:${d.vistas/max*100}%"></i></div>`; }).join('')}</div>
+      <div class="xl"><span>${fmtD(fechas[0])}</span><span>${fmtD(hoyF)}</span></div></div>
+    <div class="cols">
+      <div class="card"><h3 style="margin-top:0">Lo más buscado</h3>${rk(st.busquedas, r=>r.q, r=>r.n)}</div>
+      <div class="card"><h3 style="margin-top:0">Búsquedas sin resultado <span class="faint" style="text-transform:none;letter-spacing:0">(lo que falta agregar)</span></h3>${rk(st.sinResultado, r=>r.q, r=>r.sinResultado)}</div>
+      <div class="card"><h3 style="margin-top:0">Lo más visto</h3>${rk(st.vistas, r=>plain(r.titulo)+(r.ruta.startsWith('linea')?' · línea':''), r=>r.n)}</div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">Quién entra</h3><div class="tbl"><table><tr><th>Nombre</th><th>No.</th><th>Días activos</th><th>Vistas</th><th>Búsquedas</th><th>Aportaciones</th><th>Última vez</th></tr>
+      ${st.usuarios.map(u=>`<tr><td>${esc(nombre[u.num]||u.nombre)}</td><td class="n">${esc(u.num)}</td><td class="n">${u.dias}</td><td class="n">${u.vistas}</td><td class="n">${u.busquedas}</td><td class="n">${apsPor[u.num]||0}</td><td>${u.ultimo?fecha(new Date(u.ultimo).toISOString()):'—'}</td></tr>`).join('') || '<tr><td colspan="7" class="faint">Nadie ha entrado en este periodo.</td></tr>'}</table></div></div>`;
+}
+
+async function vUsuarios(){
+  const {usuarios} = await api('usuarios');
+  $('out').innerHTML = `<div class="card"><h3 style="margin-top:0">Dar de alta</h3><div class="alta">
+      <input class="in" id="nNum" placeholder="Número de control" inputmode="numeric"><input class="in" id="nNom" placeholder="Nombre">
+      <select id="nNiv">${Object.entries(NIV).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="btn dk" id="nOk">Agregar</button></div>
+      <div class="faint" style="font-size:12.5px;margin-top:8px">La primera vez que entre, la persona crea su propia contraseña.</div></div>
+    <div class="card tbl"><table><tr><th>Nombre</th><th>No.</th><th>Nivel</th><th>Contraseña</th><th>Activo</th><th></th></tr>
+      ${usuarios.map(u=>`<tr data-u="${esc(u.num)}"><td><input class="in" value="${esc(u.nombre)}" data-campo="nombre" style="width:100%;min-width:120px"></td><td class="n">${esc(u.num)}</td>
+        <td><select data-campo="nivel">${Object.entries(NIV).map(([k,v])=>`<option value="${k}" ${u.nivel===k?'selected':''}>${v}</option>`).join('')}</select></td>
+        <td>${u.tienePin?'Creada':'<span class="faint">Pendiente (primera vez)</span>'}</td>
+        <td><input type="checkbox" data-campo="activo" ${u.activo?'checked':''}></td>
+        <td style="white-space:nowrap"><button class="btn" data-guardar>Guardar</button> ${u.tienePin?'<button class="btn" data-reset>Reiniciar contraseña</button>':''}</td></tr>`).join('')}</table></div>`;
+}
+
+function vNiveles(cfg){
+  const fila = (key, t, grp) => `<tr><td>${esc(plain(t))}<div class="faint" style="font-size:12px">${grp}</div></td><td><select data-proc="${esc(key)}">${Object.entries(NIV).map(([k,v])=>`<option value="${k}" ${(cfg[key]||'operador')===k?'selected':''}>${k==='operador'?'Todos':v+' o más'}</option>`).join('')}</select></td></tr>`;
+  $('out').innerHTML = `<div class="card"><div class="muted" style="font-size:14px">Elige desde qué nivel se ve cada guía o proceso. "Todos" = cualquiera con cuenta.</div></div>
+    <div class="card tbl"><table><tr><th>Guía / proceso</th><th>¿Quién la ve?</th></tr>
+    ${Object.entries(PROCS).map(([id,p])=>fila(id, p.titulo, 'Kasalis · '+esc(p.estacion))).join('')}
+    ${Object.entries(PROCESOS).map(([id,p])=>fila('linea:'+id, p.titulo, 'Línea · '+esc(p.maquina||p.linea))).join('')}</table>
+    <div style="margin-top:12px"><button class="btn dk" id="nivOk">Guardar accesos</button></div></div>`;
+}
+
+async function vNotif(){
+  $('out').innerHTML = `<div class="card"><h3 style="margin-top:0">📱 Aviso al celular (ntfy)</h3>
+    <ol style="line-height:1.7;margin:0;padding-left:20px"><li>Instala la app gratis <b>ntfy</b> (App Store / Google Play).</li><li>Toca <b>＋</b> → "Subscribe to topic".</li><li>Escribe este tema y guarda: <code id="ntfyT" style="font-weight:800;font-size:15px">…</code> <button class="btn" id="ntfyC">Copiar</button></li></ol>
+    <div class="faint" style="font-size:12.5px;margin-top:6px">No lo compartas: quien tenga el tema recibe los avisos.</div>
+    <div class="muted" style="margin-top:8px;font-size:13.5px">Cada aportación nueva te llega como notificación con quién, qué falla y el texto. Al tocarla abre este panel.</div></div>
+    <div class="card"><h3 style="margin-top:0">✉️ Aviso por correo (Netlify)</h3>
+    <ol style="line-height:1.7;margin:0;padding-left:20px"><li>En app.netlify.com abre el proyecto <b>jd-fallas</b>.</li><li><b>Project configuration → Notifications → Emails and webhooks → Form submission notifications</b>.</li><li>Add notification → Email → formulario <b>aportacion</b> → tu correo.</li></ol></div>`;
+  try{ const {topic} = await api('ntfy'); $('ntfyT').textContent = topic; $('ntfyC').onclick = ()=>{ navigator.clipboard.writeText(topic); toast('Copiado'); }; }catch{}
+}
+
+async function pintar(){ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.t===tab));
+  try{ if(tab==='ap') await vAportes(); else if(tab==='act') await vActividad(); else if(tab==='us') await vUsuarios(); else if(tab==='niv') vNiveles((await api('config')).procNiveles); else await vNotif(); }
+  catch(e){ $('out').innerHTML = `<div class="empty">${esc(e.message)}</div>`; } }
+$('tabs').onclick = e => { const b = e.target.closest('[data-t]'); if(b){ tab = b.dataset.t; pintar(); } };
+$('out').addEventListener('click', async e => {
+  const t = e.target;
+  if(t.closest('[data-f]')){ filtro = t.closest('[data-f]').dataset.f; return vAportes(); }
+  if(t.closest('[data-dias]')) return vActividad(+t.closest('[data-dias]').dataset.dias);
+  if(t.matches('.ap img')){ const d = document.createElement('div'); d.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center'; d.innerHTML=`<img src="${t.src}" style="max-width:100%;max-height:100%">`; d.onclick=()=>d.remove(); document.body.appendChild(d); return; }
+  const est = t.closest('[data-est]');
+  if(est){ const nota = $('out').querySelector(`[data-nota="${CSS.escape(est.dataset.id)}"]`)?.value || '';
+    try{ await api('aportaciones/estado', {method:'POST', body: JSON.stringify({id: est.dataset.id, estado: est.dataset.est, nota})}); toast(est.dataset.est==='aprobada'?'Confirmada':est.dataset.est==='rechazada'?'Rechazada':'Regresada a pendiente'); vAportes(); }catch(err){ alert(err.message); } return; }
+  const br = t.closest('[data-borrar]');
+  if(br && confirm('¿Borrar esta aportación para siempre?')){ await api('aportaciones/borrar', {method:'POST', body: JSON.stringify({id: br.dataset.borrar})}); vAportes(); return; }
+  if(t.id==='nOk'){ try{ await api('usuarios', {method:'POST', body: JSON.stringify({num:$('nNum').value.trim(), nombre:$('nNom').value.trim(), nivel:$('nNiv').value})}); toast('Usuario agregado'); vUsuarios(); }catch(err){ alert(err.message); } return; }
+  const row = t.closest('[data-u]');
+  if(row && t.matches('[data-guardar]')){ const g = c => row.querySelector(`[data-campo="${c}"]`);
+    try{ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, nombre: g('nombre').value, nivel: g('nivel').value, activo: g('activo').checked})}); toast('Guardado'); }catch(err){ alert(err.message); } return; }
+  if(row && t.matches('[data-reset]') && confirm('¿Reiniciar su contraseña? La próxima vez que entre creará una nueva.')){ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, resetPin: true})}); toast('Contraseña reiniciada'); vUsuarios(); return; }
+  if(t.id==='nivOk'){ const cfg = {}; $('out').querySelectorAll('[data-proc]').forEach(s=>cfg[s.dataset.proc] = s.value); await api('config', {method:'POST', body: JSON.stringify({procNiveles: cfg})}); toast('Accesos guardados'); }
+});
+pintar();
+</script></body></html>

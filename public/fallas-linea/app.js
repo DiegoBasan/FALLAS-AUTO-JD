@@ -2,6 +2,9 @@
    Mismo formato que Fallas Kasalis: flujo de resolución paso a paso + guías de procesos con fotos. */
 import {MAQ, FALLAS, PROCESOS} from './data/lineas.js';
 import {guideHTML} from '../shared/procs.js';
+import {yo, track, mountAportes, ocultarFab, cuentaHTML, montarCuenta, puedeVer} from '../shared/cuenta.js';
+let SES = {nivel:'operador', procNiveles:{}};
+const visible = id => puedeVer(SES.procNiveles['linea:'+id] || 'operador', SES.nivel);
 import {tx, LEYENDA, plain} from '../shared/txt.js';
 import {flowFijo} from '../shared/flow.js';
 const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>', wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>'};
@@ -17,7 +20,7 @@ const pasa = x => filtro==='todas' || x.linea===filtro || (x.lineas||[]).include
 /* ---------- piezas ---------- */
 const tags = x => [x.linea, ...(x.lineas||[])].filter((v,i,a)=>v && a.indexOf(v)===i).map(l=>`<span class="tag" style="--m:${col(l)}">${esc(MAQ[l]?.n||l)}</span>`).join('');
 function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div>${tags(f)}</div><b>${esc(plain(f.titulo))}</b><span>${esc(plain(f.corto))}</span></div>`; }
-function procRow(id){ const p = PROCESOS[id]; return `<div class="row" data-go="p/${id}" style="--m:${col(p.linea)}"><b style="font-size:12px"><span class="tag" style="--m:${col(p.linea)}">${esc(MAQ[p.linea]?.n||'')}</span></b><span>${esc(p.titulo)}<small>${esc(p.maquina||'')} · ${p.pasos.length ? p.pasos.length+' pasos' : 'en construcción'}</small></span><span class="faint">›</span></div>`; }
+function procRow(id){ const p = PROCESOS[id]; if(!visible(id)) return ''; return `<div class="row" data-go="p/${id}" style="--m:${col(p.linea)}"><b style="font-size:12px"><span class="tag" style="--m:${col(p.linea)}">${esc(MAQ[p.linea]?.n||'')}</span></b><span>${esc(p.titulo)}<small>${esc(p.maquina||'')} · ${p.pasos.length ? p.pasos.length+' pasos' : 'en construcción'}</small></span><span class="faint">›</span></div>`; }
 function renderFilters(){
   const keys = ['todas', ...Object.keys(MAQ)];
   $('filters').innerHTML = keys.map(k=> k==='kasalis'
@@ -45,8 +48,9 @@ function fallaView(id){
 }
 function procesoView(id){
   const p = PROCESOS[id]; if(!p) return procesosTab();
+  if(!visible(id)) return `<div class="card"><div class="hint muted">Este proceso es para otro nivel de acceso.</div></div>`;
   let h = `<div class="head" style="--m:${col(p.linea)}"><div class="k"><span class="tag">${esc(MAQ[p.linea]?.n||'')}</span> Proceso${p.maquina?' · '+esc(p.maquina):''}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando||'')}</p></div>`;
-  h += guideHTML(p, BASE, p.pasos.length ? 'Pasos' : 'Lo que ya sabemos');
+  h += `<div class="gflow-p" data-pid="${id}">${guideHTML(p, BASE, p.pasos.length ? 'Pasos' : 'Lo que ya sabemos')}</div>`;
   const usa = FALLAS.filter(f=>f.flujo.some(s=>s.proc===id));
   if(usa.length) h += `<h3 class="lb">Se usa en</h3>${usa.map(f=>`<div class="link" data-go="f/${f.id}"><span>${esc(f.titulo)}</span><span class="faint">›</span></div>`).join('')}`;
   return h + LEYENDA;
@@ -58,7 +62,7 @@ function procesosTab(){
   return order.length ? order.map(l=>`<h3 class="lb">${esc(MAQ[l].n)}</h3><div class="list">${groups[l].map(procRow).join('')}</div>`).join('') : '<div class="empty">Sin procesos para esta línea todavía.</div>';
 }
 function infoTab(){
-  return `<h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Abre esta página en <b>Safari</b> → Compartir → <b>Agregar a pantalla de inicio</b>.</div>
+  return `${cuentaHTML()}<h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Abre esta página en <b>Safari</b> → Compartir → <b>Agregar a pantalla de inicio</b>.</div>
     <h3 class="lb">Colores</h3><div class="list">${Object.entries(MAQ).map(([k,m])=>`<div class="row" ${k==='kasalis'?`onclick="location.href='${m.href}'"`:`data-f2="${k}"`}><b><span class="tag" style="--m:${m.c}">${esc(m.n)}</span></b><span>${esc(m.d||'')}</span><span class="faint">${k==='kasalis'?'↗':''}</span></div>`).join('')}</div>
     <h3 class="lb">Qué hay aquí</h3><div class="install"><b>Fallas</b>: cada falla de las estaciones de línea y hornos con su flujo (primero checar esto, luego esto…).<br><b>Procesos</b>: guías paso a paso (cambio de DELO, hornos, recetas, fixturas…).<br>Las fallas de la Kasalis están en su propia app: <a href="${MAQ.kasalis.href}"><b>Fallas Kasalis ↗</b></a></div>`;
 }
@@ -71,6 +75,7 @@ function searchView(q){
 }
 
 /* ---------- navegación ---------- */
+let trk;
 function route(){
   const raw = decodeURIComponent(location.hash.slice(1));
   let html, title = 'Fallas de línea', tab = 'fallas', sub = false;
@@ -83,7 +88,16 @@ function route(){
   else html = homeView();
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value = '';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(f, {accent:col(f.linea), base:new URL('./', location.href).href, procHTML: st => st.proc && PROCESOS[st.proc] ? guideHTML(PROCESOS[st.proc], BASE, PROCESOS[st.proc].titulo) : ''}); }); $('back').style.display = sub ? '' : 'none';
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(f, {accent:col(f.linea), base:new URL('./', location.href).href, procHTML: st => st.proc && PROCESOS[st.proc] && visible(st.proc) ? guideHTML(PROCESOS[st.proc], BASE, PROCESOS[st.proc].titulo) : ''}); });
+  let ap = null;
+  const gf = $('out').querySelector('.gflow');
+  if(gf){ const f = FALLAS.find(x=>x.id===gf.dataset.fid); ap = {el: gf, ref:'linea:'+f.id, app:'linea', fallaId:f.id, titulo: plain(f.titulo), pasos: f.flujo.map(x=>plain(x.p))}; }
+  const gp = $('out').querySelector('.gflow-p');
+  if(gp){ const p = PROCESOS[gp.dataset.pid]; ap = {el: gp, ref:'linea-p:'+gp.dataset.pid, app:'linea', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
+  if(ap) mountAportes(ap.el, ap); else ocultarFab();
+  if(raw==='info') montarCuenta($('out'));
+  if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'linea'}), 1500); }
+  else track('vista', {ruta: 'linea/' + (raw || 'inicio'), titulo}); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
@@ -106,4 +120,5 @@ $('q').addEventListener('keydown', e=>{ if(e.key==='Enter') $('q').blur(); });
 $('clr').onclick = ()=>{ $('q').value = ''; location.hash = ''; };
 document.querySelectorAll('.tabs a').forEach(a=>a.addEventListener('click', ()=>{ $('q').value = ''; depth = 0; }));
 addEventListener('hashchange', route);
-renderFilters(); route();
+renderFilters();
+yo().then(r=>{ SES = {nivel: r.yo.nivel, procNiveles: r.procNiveles || {}}; }).catch(()=>{}).finally(route);

@@ -16,5 +16,17 @@ h1{font-size:28px;margin:0 0 4px;letter-spacing:-.5px} p.s{color:var(--ink2);mar
 <div class="top"><div><h1>JD Fallas</h1><p class="s">Fallas y procesos de las líneas de cámaras</p></div><button class="ibtn" data-theme-toggle></button></div>
 <a class="big" href="buscador-kasalis/"><i style="background:#FF7F66"></i><span><b>Fallas Kasalis</b><small>Pixid 500: códigos, flujos y guías del programa</small></span></a>
 <a class="big" href="fallas-linea/"><i style="background:#2F6BFF"></i><span><b>Fallas de línea</b><small>Gecko, Moose, Scorpion y hornos</small></span></a>
-<div class="login">🔒 Próximamente: entrar con tu número de control para ver procedimientos por nivel y dejar aportaciones (comentarios, fotos, correcciones, dudas).</div>
-</main></body></html>
+<a class="big" id="adm" href="/admin/" hidden><i style="background:#141416"></i><span><b>Panel de administración</b><small>Aportaciones, actividad, búsquedas y usuarios</small></span></a>
+<div class="login" id="yoBox">Cargando tu cuenta…</div>
+<form name="aportacion" method="POST" data-netlify="true" netlify-honeypot="bot" hidden>
+  <input name="bot"><input name="quien"><input name="falla"><input name="paso"><input name="tipo"><textarea name="texto"></textarea>
+</form>
+</main>
+<script type="module">
+import {yo, track} from '/shared/cuenta.js';
+yo().then(({yo:u})=>{
+  document.getElementById('yoBox').innerHTML = `Hola <b>${u.nombre}</b> · No. ${u.num}. ¿Ves algo que falte o no cuadre en una falla? Usa <b>＋ Aportar</b> ahí mismo. <a href="/buscador-kasalis/#info">Mi cuenta y mis aportaciones</a>`;
+  if(u.nivel==='admin') document.getElementById('adm').hidden = false;
+}).catch(()=>{});
+track('vista', {ruta:'inicio', titulo:'Inicio'});
+</script></body></html>

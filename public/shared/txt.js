@@ -17,10 +17,10 @@ export const FUENTES = {
 };
 const INI = {d:'D', m:'M', l:'L', j:'J', e:'E'};
 export const tx = s => esc(s)
-  .replace(/\[\[([dmlje]):([\s\S]+?)\]\]/g, (_, k, t) => `${t}<i class="sd sd-${k}" title="${FUENTES[k].n}">${INI[k]}</i>`)
+  .replace(/\[\[([dmlje]):([\s\S]+?)\]\]/g, (_, k, t) => t)
   .replace(/\{\{([\s\S]+?)\}\}/g, '<span class="src src-c" title="Complemento de Claude: no confirmado en piso">$1</span>');
 export const plain = s => String(s??'').replace(/\{\{|\}\}/g, '').replace(/\[\[[dmlje]:|\]\]/g, '');
-export const LEYENDA = `<div class="leyenda"><span><span class="src src-c">morado</span> = Claude, sin confirmar</span>${Object.keys(INI).map(k=>`<span><i class="sd sd-${k}">${INI[k]}</i> ${FUENTES[k].n}</span>`).join('')}<span>sin marca = manual</span></div>`;
+export const LEYENDA = `<div class="leyenda"><span><span class="src src-c">Texto en morado</span> = complemento, falta confirmarlo en piso</span></div>`;
 if(typeof document!=='undefined' && !document.getElementById('srcCSS')){
   const st = document.createElement('style'); st.id = 'srcCSS';
   st.textContent = Object.entries(FUENTES).map(([k,f])=>`.src-${k}{color:${f.c}}[data-theme=dark] .src-${k},.head .src-${k}{color:${f.d}}`).join('\n') + `

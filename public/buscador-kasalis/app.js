@@ -7,6 +7,7 @@ import {PROCS, procInline, guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA, plain} from '../shared/txt.js';
 import {flowFijo} from '../shared/flow.js';
 import {DEBUG} from './data/debug.js';
+import {yo, track, mountAportes, ocultarFab, cuentaHTML, montarCuenta, puedeVer} from '../shared/cuenta.js';
 import {explicaHTML, EX_CSS} from '../shared/explica.js';
 import {conImagenes} from './data/imagenes.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
@@ -164,7 +165,10 @@ function homeView(){
   h += `<details class="more"><summary>${sh('book','Guías del programa ('+Object.keys(PROCS).length+')')}</summary><div class="in">${procList(Object.keys(PROCS))}</div></details>${LEYENDA}`;
   return h;
 }
+let SES = {nivel:'operador', procNiveles:{}};
+const visible = id => puedeVer(SES.procNiveles[id] || 'operador', SES.nivel);
 function procList(ids){
+  ids = ids.filter(visible);
   return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-go="p/${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${esc(p.permisos)}${p.pasos.length ? ' · '+p.pasos.length+' pasos' : ''}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
 }
 function fallaView(id){
@@ -204,9 +208,10 @@ function codeView(code, src){
 }
 function procView(id){
   const p = PROCS[id]; if(!p) return homeView();
+  if(!visible(id)) return `<div class="card"><div class="hint muted">Esta guía es para otro nivel de acceso.</div></div>`;
   const usa = FALLAS.filter(f=>f.flujo.some(s=>s.proc===id));
   return `<div class="head"><div class="k"><span class="tag">Kasalis</span> ${esc(p.estacion)} · ${esc(p.permisos)}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando)}</p></div>
-    ${guideHTML(p, undefined, 'Pasos')}${usa.length?`${sh('book','Se usa en')}${usa.map(f=>`<div class="link" data-go="f/${f.id}"><span>${esc(f.titulo)}</span><span class="faint">›</span></div>`).join('')}`:''}${LEYENDA}`;
+    <div class="gflow-p" data-pid="${id}">${guideHTML(p, undefined, 'Pasos')}</div>${usa.length?`${sh('book','Se usa en')}${usa.map(f=>`<div class="link" data-go="f/${f.id}"><span>${esc(f.titulo)}</span><span class="faint">›</span></div>`).join('')}`:''}${LEYENDA}`;
 }
 function processView(key){
   return `<div class="head"><div class="k">Falla de proceso (no es código Kasalis)</div><h2>${esc(PROCESS[key])}</h2></div>
@@ -261,11 +266,11 @@ function toolView(){
 }
 function infoTab(){
   let notas = ''; try{ notas = localStorage.getItem('jd_misnotas')||''; }catch(e){}
-  return `<div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>
+  return `${cuentaHTML()}<div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>
     ${sh('info','Cómo se usa',1)}<div class="install">
     1. Busca el <b>código</b> que sale en la pantalla (ej. 219) o toca la falla.<br>
     2. Sigue los pasos en orden y contesta <b>SÍ / NO</b>.<br>
-    3. Cuando se arregle, toca <b>✓ Con esto se resolvió</b>.<br>
+    3. ¿Algo no cuadra o falta? Toca <b>＋ Aportar</b> en la falla.<br>
     ${LEYENDA.replace('class="leyenda"','class="leyenda" style="margin:8px 0 0"')}</div>
     ${sh('doc','Mis notas (solo en este celular)')}<div class="install"><textarea id="misnotas" rows="5" placeholder="Contraseñas, extensiones, recordatorios… No se suben a ningún lado." style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--surface);color:inherit">${esc(notas)}</textarea></div>
     <h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Safari → <b>Compartir</b> → <b>Agregar a pantalla de inicio</b>. En Android: menú ⋮ → Instalar app.</div>
@@ -295,6 +300,7 @@ function searchView(q){
 }
 
 /* ---------- navegación ---------- */
+let trk;
 function route(){
   const raw = decodeURIComponent(location.hash.slice(1));
   let html, title = 'Fallas Kasalis', tab = 'fallas', sub = false;
@@ -318,7 +324,16 @@ function route(){
   }
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value='';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(conImagenes(f), {accent:'#FF7F66', base:new URL('./', location.href).href, procHTML: st => st.proc ? procInline(st.proc) : ''}); });
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(conImagenes(f), {accent:'#FF7F66', base:new URL('./', location.href).href, procHTML: st => st.proc && visible(st.proc) ? procInline(st.proc) : ''}); });
+  let ap = null;
+  const gf = $('out').querySelector('.gflow');
+  if(gf){ const f = FALLAS.find(x=>x.id===gf.dataset.fid); ap = {el: gf, ref:'kasalis:'+f.id, app:'kasalis', fallaId:f.id, titulo: plain(f.titulo), pasos: f.flujo.map(x=>plain(x.p))}; }
+  const gp = $('out').querySelector('.gflow-p');
+  if(gp){ const p = PROCS[gp.dataset.pid]; ap = {el: gp, ref:'kasalis-p:'+gp.dataset.pid, app:'kasalis', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
+  if(ap) mountAportes(ap.el, ap); else ocultarFab();
+  if(raw==='info') montarCuenta($('out'));
+  if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode,.doc').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'kasalis'}), 1500); }
+  else track('vista', {ruta: 'kasalis/' + (raw || 'inicio'), titulo});
   $('back').style.display = sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
@@ -339,4 +354,4 @@ $('out').addEventListener('input', e=>{ if(e.target.id==='misnotas'){ try{ local
   if(e.target.id==='exIn'){ const v = e.target.value; try{ localStorage.setItem('jd_ex_linea', v); }catch(_){} $('exOut').innerHTML = v.trim() ? explicaHTML(v) : ''; } });
 $('out').addEventListener('click', e=>{ const b = e.target.closest('[data-ej]'); if(b){ const t = $('exIn'); t.value = EJEMPLOS[b.dataset.ej]; t.dispatchEvent(new Event('input', {bubbles:true})); } });
 addEventListener('hashchange', route);
-route();
+yo().then(r=>{ SES = {nivel: r.yo.nivel, procNiveles: r.procNiveles || {}}; }).catch(()=>{}).finally(route);
