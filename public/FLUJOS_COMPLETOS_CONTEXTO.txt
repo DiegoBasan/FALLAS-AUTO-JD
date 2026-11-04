@@ -1,0 +1,462 @@
+================================================================================
+JOHN DEERE CAMERA PRODUCTION LINES - COMPLETE PROCESS CONTEXT
+Jabil Manufacturing - Production Flow Documentation
+================================================================================
+
+================================================================================
+SECTION 1: CRITICAL MATERIALS & PROCESSES
+================================================================================
+
+DELLO (Adhesive) - CRITICAL BOTTLENECK
+- Supplied in tube, stored in refrigerator
+- Requires 1.5 hours ambient preparation before use
+- Duration per use: Variable (typically 8 pieces in CPK, then variable)
+- Consumption rate: Depends on dispensing parameters and environmental conditions
+- If spilled or lost: Ambient preparation timer resets (1.5 hrs)
+- Critical safety: Compressed air must be shut off and opresor secured during DELLO tube changes
+- Dispensing equipment: Kasalis (sensor assembly) and ASELEC (housing assembly)
+
+SENSOR ASSEMBLY OVEN CYCLE
+- Temperature and duration: Per specification (varies by product line)
+- Purpose: Full curing of DELLO adhesive on sensor/lens adapter assembly
+- Timing: Occurs after Kasalis BUILD phase, before RETEST validation
+- Status: Passive (no operator intervention required)
+
+HOUSING ASSEMBLY OVEN CYCLE
+- Separate oven from sensor assembly cycle
+- Temperature and duration: Per specification (varies by product line)
+- Purpose: Full curing of DELLO adhesive in housing assembly
+- Timing: Occurs after ASELEC processing, before Final Assy
+- Status: Passive (no operator intervention required)
+
+LENS ADAPTER PLASMA TREATMENT PROCESS
+- Occurs pre-assembly (before sensor attachment)
+- Step 1: Ultrasonic cleaning of lens adapter
+- Step 2: Plasma treatment of lens adapter top surface
+- Purpose: Surface preparation to enable DELLO adhesion
+- Critical: Plasma creates micro-surface texture that allows DELLO molecular bonding
+- Output: Lens adapter ready for sensor attachment and subsequent Kasalis processing
+
+KASALIS EQUIPMENT - CORE OPTICAL ASSEMBLY
+- Two machines: Kasalis Scorpion (Scorpion line only), Kasalis ELK (ELK + Moose contingency)
+- Function - BUILD mode:
+  * Dispenses DELLO on lens adapter
+  * Performs optical alignment via SFR search (pick-and-place of lens)
+  * Applies UV cure (2-5 min)
+  * Output: Sensor assembly ready for oven curing
+- Function - RETEST mode:
+  * Validates SFR after oven curing (post-ambient cure)
+  * Confirms DELLO did not shift during oven process
+  * Pass/Fail outcomes documented for quality tracking
+
+SFR (SPATIAL FREQUENCY RESPONSE) - OPTICAL QUALITY METRIC
+- Measurement: Optical resolution and focus quality of lens-sensor assembly
+- Target: Variable by lens model (76° vs 95° vs 131° vs 133.4° have different targets)
+- Validation points: Kasalis BUILD phase and Kasalis RETEST phase
+- Failure code 161: Does not reach SFR target (causes: dirty targets, dirty lens, communication issues)
+- Failure code 155: SFR drops post-oven (suggests gripper movement or DELLO shift)
+- Failure code 108: Assembly contaminated pre-cure
+
+ASELEC EQUIPMENT - AUTOMATED HOUSING PROCESSING
+- Dispenses specialized DELLO in housing
+- Performs plasma treatment of housing surface
+- Performs pick-and-place of glass window into housing
+- Output: Housing assembly ready for oven curing
+- Critical: All housing-related DELLO and glass operations consolidated in single machine
+
+================================================================================
+SECTION 2: MOOSE LINE - COMPLETE FLOW
+================================================================================
+
+ENTRY: Sensor wafer + Housing + Glass window
+
+↓ LENS ADAPTER PLASMA TREATMENT
+├─ Ultrasonic cleaning of lens adapter
+├─ Plasma treatment of lens adapter surface
+└─ Output: Prepared lens adapter
+
+↓ LENS ADAPTER ASSEMBLY
+├─ Sensor wafer attached to lens adapter
+├─ Assembly ready for Kasalis processing
+└─ Output: Sensor + Lens Adapter assembly
+
+↓ KASALIS - BUILD MODE
+├─ DELLO dispensed on lens adapter
+├─ Optical alignment: Lens placed via pick-and-place, SFR measured and optimized
+├─ UV cure applied
+└─ Output: Assembled sensor-lens unit ready for oven
+
+↓ SENSOR ASSEMBLY OVEN CURE
+├─ DELLO fully cures
+└─ Output: Cured sensor assembly
+
+↓ KASALIS - RETEST MODE
+├─ SFR validation post-cure
+├─ If PASS: Continues to next stage
+└─ If FAIL: QRQC opened, possible recovery procedures
+
+↓ [PARALLEL PATHS - Sensor assembly and housing assembly run concurrently]
+
+├─── PARALLEL PATH A: HOUSING PROCESSING
+│    ↓ ASELEC PROCESSING
+│    ├─ DELLO dispense in housing
+│    ├─ Housing plasma treatment
+│    ├─ Glass window pick-and-place into housing
+│    └─ Output: Housing with glass installed
+│
+│    ↓ HOUSING ASSEMBLY OVEN CURE
+│    ├─ DELLO fully cures
+│    └─ Output: Cured housing assembly
+
+└─── PARALLEL PATH B: [Cured sensor assembly waits for housing path to complete]
+
+↓ FINAL ASSEMBLY CONVERGENCE
+├─ Sensor assembly and housing assembly brought together
+├─ All fasteners installed (critical point: torque/speed/pressure parameters)
+├─ Critical failure mode: Elevated screws (improper torque, speed, or cylinder pressure)
+└─ Output: Fully assembled camera unit
+
+↓ BRACKET ATTACHMENT (Moose specific)
+├─ Final bracket installed
+└─ Output: Complete Moose camera
+
+↓ QA / FINAL INSPECTION & STORAGE
+
+================================================================================
+SECTION 3: SCORPION LINE - COMPLETE FLOW
+================================================================================
+
+ENTRY: Sensor wafer (multiple lens models: 76°, 95°, 131°/135°, 133.4°)
+
+↓ WAFER FABRICATION PHASE (Initial sensor preparation)
+├─ Various processing steps to prepare sensor for assembly
+└─ Output: Processed sensor wafer
+
+↓ LENS ADAPTER PLASMA TREATMENT
+├─ Ultrasonic cleaning of lens adapter
+├─ Plasma treatment of lens adapter surface
+└─ Output: Prepared lens adapter
+
+↓ LENS ADAPTER ASSEMBLY
+├─ Sensor wafer attached to lens adapter
+├─ Assembly ready for Kasalis processing
+└─ Output: Sensor + Lens Adapter assembly
+
+↓ KASALIS SCORPION - BUILD MODE
+├─ DELLO dispensed on lens adapter
+├─ Optical alignment: Lens placed via pick-and-place
+├─ SFR measurement and optimization (parameters vary by lens model)
+├─ UV cure applied
+└─ Output: Assembled sensor-lens unit ready for oven
+
+↓ SENSOR ASSEMBLY OVEN CURE
+├─ DELLO fully cures
+└─ Output: Cured sensor assembly
+
+↓ KASALIS SCORPION - RETEST MODE
+├─ SFR validation post-cure
+├─ If PASS: Continues to next stage
+└─ If FAIL: QRQC opened, possible recovery procedures
+
+↓ [PARALLEL PATHS - Sensor assembly and housing assembly run concurrently]
+
+├─── PARALLEL PATH A: HOUSING PROCESSING
+│    ↓ ASELEC PROCESSING
+│    ├─ DELLO dispense in housing
+│    ├─ Housing plasma treatment
+│    ├─ Glass window pick-and-place into housing
+│    └─ Output: Housing with glass installed
+│
+│    ↓ HOUSING ASSEMBLY OVEN CURE
+│    ├─ DELLO fully cures
+│    └─ Output: Cured housing assembly
+
+└─── PARALLEL PATH B: [Cured sensor assembly waits for housing path]
+
+↓ FINAL ASSEMBLY CONVERGENCE
+├─ Sensor assembly and housing assembly brought together
+├─ All fasteners installed (critical point: torque/speed/pressure parameters)
+├─ Critical failure mode: Elevated screws
+└─ Output: Fully assembled camera unit
+
+↓ DOGBONE ASSEMBLY (Optional - for applicable SKUs)
+├─ Two camera units mounted in specific configuration (100mm, 200mm, or 300mm spacing)
+├─ Orientation: Vertical or Horizontal (V/H)
+├─ SKU options: Mono (single camera), 100mm V, 100mm H, 200mm V, 200mm H, 300mm V, 300mm H
+└─ Output: Dogbone unit (if applicable) or single camera unit
+
+↓ QA / FINAL INSPECTION & STORAGE
+
+================================================================================
+SECTION 4: GECKO LINE - COMPLETE FLOW
+================================================================================
+
+STATUS: New production line, early production phase
+
+ENTRY: Sensor wafer + Housing + Glass window
+
+↓ LENS ADAPTER PLASMA TREATMENT
+├─ Ultrasonic cleaning of lens adapter
+├─ Plasma treatment of lens adapter surface
+└─ Output: Prepared lens adapter
+
+↓ LENS ADAPTER ASSEMBLY
+├─ Sensor wafer attached to lens adapter
+└─ Output: Sensor + Lens Adapter assembly
+
+↓ KASALIS - BUILD MODE
+├─ DELLO dispensed on lens adapter
+├─ Optical alignment: Lens placed via pick-and-place, SFR optimized
+├─ UV cure applied
+└─ Output: Assembled sensor-lens unit ready for oven
+
+↓ SENSOR ASSEMBLY OVEN CURE
+├─ DELLO fully cures
+└─ Output: Cured sensor assembly
+
+↓ KASALIS - RETEST MODE
+├─ SFR validation post-cure
+├─ If PASS: Continues
+└─ If FAIL: QRQC opened
+
+↓ [PARALLEL PATHS - Sensor assembly and housing assembly run concurrently]
+
+├─── PARALLEL PATH A: HOUSING PROCESSING
+│    ↓ ASELEC PROCESSING
+│    ├─ DELLO dispense in housing
+│    ├─ Housing plasma treatment
+│    ├─ Glass window pick-and-place
+│    └─ Output: Housing with glass installed
+│
+│    ↓ HOUSING ASSEMBLY OVEN CURE
+│    ├─ DELLO fully cures
+│    └─ Output: Cured housing assembly
+
+└─── PARALLEL PATH B: GECKO-SPECIFIC PROCESSING
+     ↓ DESICCANT CARTRIDGE ATTACHMENT
+     ├─ Desiccant cartridge installed in specific location
+     └─ Output: Assembly with desiccant
+
+     ↓ TOP GASKET ATTACHMENT
+     ├─ Top gasket installed
+     └─ Output: Prepared for final assembly
+
+↓ FINAL ASSEMBLY CONVERGENCE
+├─ All sub-assemblies converge
+├─ Final fasteners and components installed
+├─ Critical point: Torque/speed/pressure parameters
+└─ Output: Fully assembled Gecko camera
+
+↓ QA / FINAL INSPECTION & STORAGE
+
+================================================================================
+SECTION 5: ELK LINE - COMPLETE FLOW
+================================================================================
+
+STATUS: Running well with 0 failures in early production
+
+ENTRY: Sensor wafer + Housing + Glass window
+
+↓ LENS ADAPTER PLASMA TREATMENT
+├─ Ultrasonic cleaning of lens adapter
+├─ Plasma treatment of lens adapter surface
+└─ Output: Prepared lens adapter
+
+↓ LENS ADAPTER ASSEMBLY
+├─ Sensor wafer attached to lens adapter
+└─ Output: Sensor + Lens Adapter assembly
+
+↓ KASALIS ELK - BUILD MODE
+├─ DELLO dispensed on lens adapter
+├─ Optical alignment: Lens placed via pick-and-place, SFR optimized
+├─ UV cure applied
+├─ Note: Kasalis ELK parameters appear better tuned than Scorpion
+└─ Output: Assembled sensor-lens unit ready for oven
+
+↓ SENSOR ASSEMBLY OVEN CURE
+├─ DELLO fully cures
+└─ Output: Cured sensor assembly
+
+↓ KASALIS ELK - RETEST MODE
+├─ SFR validation post-cure
+├─ If PASS: Continues
+└─ If FAIL: QRQC opened
+
+↓ [PARALLEL PATHS - Sensor assembly and housing assembly run concurrently]
+
+├─── PARALLEL PATH A: HOUSING PROCESSING
+│    ↓ ASELEC PROCESSING
+│    ├─ DELLO dispense in housing
+│    ├─ Housing plasma treatment
+│    ├─ Glass window pick-and-place
+│    └─ Output: Housing with glass installed
+│
+│    ↓ HOUSING ASSEMBLY OVEN CURE
+│    ├─ DELLO fully cures
+│    └─ Output: Cured housing assembly
+
+└─── PARALLEL PATH B: [Cured sensor assembly waits for housing path]
+
+↓ FINAL ASSEMBLY CONVERGENCE
+├─ Sensor assembly and housing assembly brought together
+├─ All fasteners installed
+├─ Critical point: Torque/speed/pressure parameters
+└─ Output: Fully assembled ELK camera
+
+↓ QA / FINAL INSPECTION & STORAGE
+
+================================================================================
+SECTION 6: INFURROW LINE - OVERVIEW
+================================================================================
+
+STATUS: Lower priority, less detailed information available
+
+LOCATION: Outside clean room, on production floor
+PROCESS: Standard John Deere camera production
+CONFIGURATION: Similar to Moose/Scorpion architecture but with some variations
+DETAILS: To be documented with additional information gathering
+
+================================================================================
+SECTION 7: FAILURE MODES & RECOVERY
+================================================================================
+
+CODE 161: DOES NOT REACH SFR TARGET
+- Kasalis BUILD: Optical alignment cannot find acceptable focus position
+- Kasalis RETEST: Post-cure SFR below acceptable threshold
+- Common causes:
+  * Communication errors between vision system and Kasalis
+  * Dirty optical targets (external or on equipment)
+  * Dirty lens surface
+  * Parameters not tuned for specific lens model variant
+- Recovery: QRQC process with parameter adjustment or lens cleaning
+
+CODE 155: POST-OVEN SFR DROP
+- Phenomenon: SFR acceptable after Kasalis BUILD, fails after oven cure
+- Likely cause: Gripper or mechanical interference moved lens position during curing
+- Possible DELLO shift due to thermal cycling
+- Recovery: Analysis of gripper pressure, DELLO viscosity, oven temperature profile
+
+CODE 108: CONTAMINATION PRE-CURE
+- Assembly detected as contaminated before DELLO cure
+- Possible sources: Dust, particles, or handling contamination
+- Recovery: Clean assembly in plasma or ultrasonic, reprocess
+
+ELEVATED SCREWS IN FINAL ASSY
+- Endemic failure mode
+- Occurs during fastener installation (Final Assembly torque application)
+- Root causes (not mutually exclusive):
+  * Improper torque setting for specific screw type/material
+  * Excessive spindle speed during fastening
+  * Excessive cylinder pressure pushing fastener past material yield
+  * Incorrect fastener height or gauge
+- Recovery: Screw replacement, parameter retuning
+
+================================================================================
+SECTION 8: KEY CRITICAL PARAMETERS BY LINE
+================================================================================
+
+LENS VARIANTS (Scorpion specific)
+- 76° lens: SFR target A, height search range A
+- 95° lens: SFR target B, height search range B
+- 131°/135° lens: SFR target C, height search range C
+- 133.4° lens: SFR target D, height search range D
+- Critical: Each variant requires different Kasalis parameters for optimal alignment
+
+KASALIS BUILD PARAMETERS (Variable by Line & Lens)
+- SFR target: Set per lens model / product line
+- Height search range: Set per lens model / product line
+- UV cure duration: 2-5 min (per specification)
+- DELLO dispense volume: Per specification (affects contact area)
+
+KASALIS RETEST PARAMETERS
+- SFR validation threshold: Must match or exceed BUILD target
+- Post-oven degradation allowance: Specification dependent
+
+FINAL ASSY FASTENING PARAMETERS
+- Torque specification: Per fastener type (TBD - to be documented)
+- Spindle speed: Per fastener type (TBD - to be documented)
+- Cylinder pressure: Per fastener type (TBD - to be documented)
+- Critical relationships: Torque + Speed + Pressure = no elevated screws
+
+================================================================================
+SECTION 9: EQUIPMENT SUMMARY
+================================================================================
+
+KASALIS SCORPION
+- Dedicated to Scorpion line
+- Does not process Moose or ELK
+- SFR parameters tuned for Scorpion lens variants
+
+KASALIS ELK
+- Dedicated to ELK line (primary)
+- Moose contingency (if Moose Kasalis unavailable)
+- Parámeters appear better tuned than Scorpion (0 failures in ELK early production)
+
+ASELEC
+- Handles all housing DELLO dispensing and glass installation
+- Shared across all lines (Scorpion, Moose, ELK, Gecko)
+- Consolidated housing processing (no manual glass installation)
+
+OVEN - SENSOR ASSEMBLY
+- Shared across all lines for sensor/lens adapter curing
+- Separate from housing oven cycle
+- Passive operation
+
+OVEN - HOUSING ASSEMBLY
+- Shared across all lines for housing curing
+- Separate from sensor oven cycle
+- Passive operation
+
+FINAL ASSY EQUIPMENT
+- Scorpion: Dedicated unit
+- Moose: Dedicated unit
+- ELK: Dedicated unit
+- Gecko: Dedicated unit (to be confirmed)
+
+================================================================================
+SECTION 10: CRITICAL PROCESS SEQUENCING
+================================================================================
+
+THE DELLO BOTTLENECK
+- Preparation: 1.5 hour requirement from refrigeration to use
+- Kasalis must wait for DELLO preparation before BUILD can start
+- If DELLO depleted mid-shift: 1.5 hour delay before new tube ready
+- If DELLO spilled: Complete restart of 1.5 hour preparation
+
+PARALLEL PROCESSING ADVANTAGE
+- Sensor and housing paths run simultaneously after respective equipment phases
+- Sensor path: Plasma → Lens Adapter → Kasalis → Oven → Retest
+- Housing path: ASELEC → Oven
+- Final Assy cannot start until both paths complete and converge
+- Critical: Whichever path takes longer determines total cycle constraint
+
+TWO-OVEN REQUIREMENT
+- Sensor and housing CANNOT share same oven cycle
+- Separate DELLO curing profiles may be required per line
+- Scheduling must account for both ovens available simultaneously for maximum throughput
+
+================================================================================
+SECTION 11: KNOWN ISSUES & ANALYSIS PENDING
+================================================================================
+
+KASALIS MOOSE MOTOR FAILURE (27-AUG-26)
+- Issue: Motor failure on Kasalis Moose unit
+- Status: Analysis pending
+- Impact: May require contingency operation on Kasalis ELK
+- Documentation: Failure root cause analysis needed
+
+DELL TUBE SHELF LIFE & DEGRADATION
+- Issue: DELLO consumption rate and behavior vary unpredictably
+- Status: Complete documentation pending
+- Required info: Shelf life from manufacture, degradation rates over time, consumption curves
+
+FINAL ASSY TORQUE SPECIFICATION GAPS
+- Scorpion Final Assy: Torque/speed/pressure parameters TBD
+- Moose Final Assy: Torque/speed/pressure parameters TBD
+- ELK Final Assy: Torque/speed/pressure parameters TBD
+- Gecko Final Assy: Torque/speed/pressure parameters TBD
+- Critical: These parameters directly impact elevated screw failure rate
+
+================================================================================
+END OF DOCUMENT
+================================================================================

@@ -1,0 +1,66 @@
+/* Conocimiento Kasalis compartido entre apps (simulador, buscador de fallas).
+   HINTS: guía rápida de troubleshooting por código (PLC Pixid) o falla de proceso. */
+export {CODES} from './kasalis-codes.js';
+
+export const HINTS = {
+  '3':'E-STOP activo: {{revisar paros de emergencia, puertas/interlocks de enclosure y relevador de seguridad. Reset desde HMI.}}',
+  '9':'MES: no pudo enviar datos del dispositivo. {{Revisar red/VLAN, servidor MES, puerto TCP del bridge.}}',
+  '10':'MES: esperando nuevo dispositivo {{(serial no validado / ruta MES). Revisar que la pieza tenga el paso previo cerrado.}}',
+  '12':'Validación de dispositivo falló: {{serial/receta no corresponde, o el paso anterior en MES no está completo.}}',
+  '16':'Aire principal bajo: {{revisar suministro, regulador y manómetro de la máquina (también en cambio de DELLO).}}',
+  '17':'Proceso abortado {{por el operador o por otra falla previa: revisar el log (Trace) para la causa raíz.}}',
+  '101':'Error general de alineación: {{ver el log para el sub-código KSvision (negativo).}}',
+  '102':'No abre la cámara del dispositivo: pogo pins / fixture / cable{{ / proxy de cámara. Ver KSvision -1xx (device camera)}}.',
+  '104':'No detecta el lente en el gripper: {{lente no cargado,}} gripper sucio{{/desgastado, posición de pick mal enseñada}}.',
+  '105':'Prefocus falló: {{target sucio, exposición, altura de target, lente muy fuera de rango Z.}}',
+  '107':'Centrado falló: {{sensor/lens adapter mal asentado, target central sucio o mal configurado (wide vs narrow AoV).}}',
+  '108':'SCAN_FAIL: {{el barrido Z/tilt no encontró pico de MTF.}} Revisar rango de búsqueda Z para la variante de lente (76/95/131/133.4°){{, targets limpios, iluminación, lente bien tomado}}. (El doc de flujos lo nombraba "contaminación".)',
+  '111':'Eje Z no se movió: {{servo/driver, límite, backlash.}}',
+  '113':'Gripper no cierra: {{presión de aire, sensor de gripper, mecánica.}}',
+  '130':'Medición UV falló: {{lightguide Dymax dañada/sucia, intensidad baja, calibración UV.}}',
+  '131':'PEAK_MTF: en el pico de alineación el MTF no llega al límite (= "no llega a target SFR" en BUILD). Limpiar lente y targets, checar comunicación de cámara, parámetros MTF por variante de lente.',
+  '132':'PEAK_CTR: en el pico de alineación (prueba final en BUILD) el centro óptico quedó fuera de límite. [[j:El final test marca error de centrado si el lente no está centrado; el alignment hace un precentration (centrado grueso) antes del scan.]] {{Revisar asiento del sensor y del lens adapter, target central limpio y límites CTR del ksprocess por variante. No confundir con -132 de KSvision (tamaño de imagen).}}',
+  '143':'MTF falla durante el curado UV: el lente se movió al curar (contracción). Revisar offset Z (UVCure offset){{ y patrón de DELLO}}.',
+  '149':'MTF falla post-curado UV (aún en gripper). {{Igual que 143: contracción / offset.}}',
+  '155':'UNGRIP_MTF: el MTF cae al ABRIR el gripper (antes del horno). Causas: [[d:curado UV insuficiente (]]{{intensidad/}}[[d:tiempo)]], [[d:gripper arrastra el lente]]{{, poco DELLO / cordón incompleto, offset de contracción}}. (El doc de flujos lo describía como post-horno.)',
+  '161':'RETEST_MTF: el MTF del RETEST (después de horno) está fuera de límite. Causas: lente/target sucio, DELLO se movió en horno (perfil temp.), {{golpe/manejo entre horno y retest,}} límites RETEST en ksprocess, cámara/pogo pins (ver 175 RETEST_NOISE).',
+  '170':'No encontró pico en scan Z: {{rango Z insuficiente o lente fuera de nominal.}}',
+  '175':'Ruido en RETEST: {{conexión de cámara / pogo pins / exposición.}}',
+  '193':'Saturación en PEAK: {{exposición/ganancia o backlight demasiado alto.}}',
+  '195':'Máximo de intentos de centrado: {{asiento del sensor, tilt del lens adapter.}}',
+  '218':'Tip find no subió (DISP_TIPFIND_EXTEND). Manual 9.22.1: revisar el limit switch del cilindro de aire. {{También aire y válvula; probar subir/bajar desde I/O.}}',
+  '219':'Tip find no bajó (DISP_TIPFIND_RETRACT, "Timeout waiting for tip find to retract"), [[d:sale al inicializar. Visto en piso: era el sensor del cilindro del tip find; se ajustó y jaló.]] {{Si no es el sensor: revisar aire, válvula y que nada lo trabe; probar el cilindro desde I/O.}}',
+  '199':'Prueba de estabilidad falló: {{vibración, gripper flojo, temperatura.}}',
+  '222':'Patrón de visión no encontrado (pre-dispense): {{pieza mal colocada, iluminación (LD/LL/EXP) o patrón .hdb equivocado para el producto.}}',
+  '230':'Falla del dispensador: bomba de desplazamiento positivo{{, cartucho DELLO, cable}}.',
+  '233':'Inspección post-dispense falló: cordón discontinuo/delgado ({{DELLO frío, }}aire, aguja tapada). Purga/prime y revisar DR{{/VS}}.',
+  '235':'Nivel de adhesivo bajo (VolumeErrorThreshold=3 %). Cambiar cartucho DELLO{{ (18 ml)}}.',
+  '236':'Pot life de DELLO vencido (PotLifeHead1=72 h, error al 3 %). Reemplazar adhesivo.',
+  '242':'Particle test (PRT) falló: partículas en el sensor. Limpiar sensor, {{revisar estación de limpieza, guantes/ESD,}} umbrales ITC/ILS/ITS.',
+  '277':'Presión de dispensado baja: {{aire / regulador.}}',
+  '402':'Movimiento de estación arriba con mesa rotatoria: {{interlock de seguridad.}}',
+  '403':'Mesa rotatoria no en posición: {{home offset, sensor de posición, acoplamiento cinemático.}}',
+  '411':'Timeout de home de la mesa rotatoria.',
+  '418':'Falla en estación de alineación{{ — ver sub-código}}.',
+  '419':'Falla en estación de dispensado{{ — ver sub-código}}.',
+  '426':'Vacío no detectado en fixture.',
+  'screws':'Tornillos elevados: revisar torque por tipo de tornillo, velocidad de spindle, presión del cilindro (empuja más allá del límite del material), altura/calibre del tornillo. Parámetros aún TBD por línea.',
+  'leak':'[[e:Leak test: O-ring mal asentado o dañado,]] {{tornillo elevado, cordón de DELLO de la ventana incompleto (233 en Fisnar),}} [[e:housing con poro.]]',
+  'eol':'[[d:EOL: comparar MTF de EOL vs datos de Kasalis RETEST;]] {{targets/ROIs de EOL, distancia de target por variante,}} [[e:conexión/serializer.]]',
+};
+export const STEP_FAIL_LABEL = {screws:'Tornillos elevados', leak:'Leak FAIL', eol:'EOL FAIL'};
+
+/* Nombre original del código (como viene en KSmessage / KSerror.h) y su lectura en inglés. */
+const EN = {FT:'final test', DISP:'dispense', DSP:'dispense', INSP:'inspection', CAM:'camera', VIS:'vision', PAT:'pattern', TGT:'target', TGTZ:'target Z',
+  CTR:'center', SYM:'symmetry', FC:'field corners', UT:'uniformity/tilt', DZ:'delta Z', PRT:'particle test', ST:'sensor test', ALN:'align', STN:'station',
+  FXT:'fixture', TBL:'table', VAC:'vacuum', CYL:'cylinder', EXT:'extend', RETR:'retract', HDOWN:'hold-down', UVMEASURE:'UV measure', POSTCURE:'post-cure',
+  UNGRIP:'ungrip', TRYS:'tries', ITER:'iterations', POS:'position', MEAS:'measure', SERNUM:'serial number', NF:'not found', INIT:'init', CFG:'config',
+  GS:'golden sample', PICKPOS:'pick position', VISIMG:'vision image', GRDCTR:'grid center', TF:'tip find', TIPFIND:'tip find', EOT:'end of travel',
+  CALIB:'calibration', CAL:'calibration', INCR:'increment', MP:'MasterProcess', DEV:'device', LIB:'library', PROC:'process', CTRL:'control',
+  PARS:'parameters', INVAL:'invalid', UPCAL:'upper calibration', DOWNCAL:'lower calibration', STAB:'stability', STABIL:'stability', HEAD1:'head 1', HEAD2:'head 2',
+  POTLIFE:'pot life', PART:'particle', REG:'register', DSTN:'distance', SENS:'sensor', VOL:'volume', IDX:'index', COUNTR:'counter', SPR:'spare', RTN:'rotation',
+  ENCLO:'enclosure', DUT:'device under test', PREALIGN:'pre-align', APTR:'aperture', MTF:'MTF', UV:'UV', MES:'MES', IPC:'IPC', ESTOP:'E-stop', SEQINIT:'sequence init',
+  EXTLIB:'external library', PARTDONE:'part done', INDEXREQUEST:'index request', RECV:'receive', RESP:'response', ERR:'error', MSG:'message', DLI:'DLI', LCOS:'LCOS',
+  SDCAL:'SD calibration', VPP:'VPP', LP:'LP', MIU:'MIU', TS1:'test station 1', TS2:'test station 2', ALIGN2:'align 2', EXPTIME:'exposure time'};
+export function englishName(name){ const s = String(name||'').split('_').map(t=>EN[t] || t.toLowerCase()).join(' '); return s.charAt(0).toUpperCase() + s.slice(1); }
+export function originalName(name, src){ return (src==='ksv' ? 'ERR_' : 'ERR_TEXT_') + name; }

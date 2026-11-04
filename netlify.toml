@@ -1,0 +1,10 @@
+# JD Fallas — sitio estático en public/, funciones (login, aportaciones) en netlify/functions/
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"

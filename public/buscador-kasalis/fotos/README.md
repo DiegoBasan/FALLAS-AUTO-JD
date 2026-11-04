@@ -1,0 +1,3 @@
+Fotos de las pantallas del programa Kasalis para las guías paso a paso.
+Una carpeta por guía (mismo id que en `data/procedimientos.js`): `fotos/ajustar-place/01.jpg`, `02.jpg`, …
+Sin usuarios, contraseñas ni rutas de red visibles (el repo es público).

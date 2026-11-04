@@ -1,0 +1,340 @@
+####################################################################################################
+# Dispense Sequence File
+####################################################################################################
+[CONFIG]
+# XYTraverseAccel : The acceleration factor to use for dispense XY motion in between dispense sequence
+# operations.  This value is expressed as a percentage value from 0.1 to 100 of the maximum rated 
+# acceleration for the motion stage. XYTraverseAccel should typically be set to a value of 50.
+XYTraverseAccel=2.5
+# MaxTimeAfterDispense : The maximum amount of time, in minutes, that is allowed to elapse between
+# the time when the camera was dispensed on and the time when alignment begings.  If this time
+# is exceeded the camera is failed at the align station.  Set = 0 to disable monitoring elapesed
+# dispense time.
+MaxTimeAfterDispense=0.0
+# PotLifeWarningThreshold : Warning level for remaining adhesive pot life expressed as a percentage
+# from 0 to 100.  If the percentage of remaining hours drops below this level a warning will be
+# displayed but the machine process can continue.
+PotLifeWarningThreshold=5.0
+# PotLifeErrorThreshold : Error level for remaining adhesive pot life expressed as a percentage
+# from 0 to 100.  If the percentage of remaining hours drops below this level an error will be
+# displayed and the machine process will not be permitted to continue until the adhesive is replaced.
+PotLifeErrorThreshold=3.0
+# VolumeWarningThreshold : Warning level for remaining adhesive volume expressed as a percentage
+# from 0 to 100.  If the percentage of remaining volume drops below this level a warning will be
+# displayed but the machine process can continue.
+VolumeWarningThreshold=10.0
+# VolumeErrorThreshold : Error level for remaining adhesive volume expressed as a percentage
+# from 0 to 100.  If the percentage of remaining volume drops below this level an error will be
+# displayed and the machine process will not be permitted to continue until the adhesive is replaced.
+VolumeErrorThreshold=3.0
+# PotLifeHead1, PotLifeHead2 : The total number of hours that newly replaced adhesive can be used
+# before being considered expired.
+PotLifeHead1=72.0
+# VolumeHead1: The total volume in milliliters of the adhesive reservoir.
+VolumeHead1=18
+# PurgeTimeDispenseHead1 : The amount of time in milliseconds (from 0 to 10000) that the
+# dispenser is turned on each purge cycle.  The dispense head will be moved to a position above
+# the purge cup.  This position is defined in the DISPENSE section of the ksglobal configuration file.
+PurgeTimeDispenseHead1=10000
+# PurgeRateDispenseHead1 : The purge rate applied when executing the dispense purge function.
+# The rate is expressed as a percentage (0 to 100%) of maximum dispense rate.
+PurgeRateDispenseHead1=50.0
+# PurgeTimeDispenseHead2 : The amount of time in milliseconds (from 0 to 10000) that the
+# dispenser is turned on each purge cycle.  The dispense head will be moved to a position above
+# the purge cup.
+# This position is defined in the DISPENSE section of the ksglobal configuration file.
+PurgeTimeDispenseHead2=10000
+# PurgeRateDispenseHead2 : The purge rate applied when executing the dispense purge function.
+# The rate is expressed as a percentage (0 to 100%) of maximum dispense rate.
+PurgeRateDispenseHead2=50.0
+# PrimeCyclesHead1: The number of iterations (from 1 to 100) to run when executing the
+# dispense prime function.
+PrimeCyclesHead1=5
+# PrimeTimeDispenseHead1: The amount of time in milliseconds (from 0 to 10000) that the dispenser is
+# turned on each prime cycle.  The dispense head will be moved to a position above the purge cup. 
+# This position is defined in the DISPENSE section of the ksglobal configuration file.
+PrimeTimeDispenseHead1=10000
+# PrimeRateDispenseHead1:  The dispense rate applied when executing the dispense prime function.
+# The rate is expressed as a percentage (0 to 100%) of maximum dispense rate of 0.1 milliliters per second.
+PrimeRateDispenseHead1=50.0
+# PrimeTimeSuckbackHead1: The amount of time in milliseconds (from 0 to 10000) that the dispense suckback
+# is turned each prime cycle.
+PrimeTimeSuckbackHead1=50
+# PrimeRateSuckbackHead1:  The suckback rate applied when executing the dispense prime function.
+# The rate is expressed as a percentage (0 to 100%) of maximum dispense rate of 0.1 milliliters per second.
+PrimeRateSuckbackHead1=50.0
+# PrimeTimeSuckbackEndHead1: The amount of time in milliseconds (from 0 to 10000) that the dispense suckback
+# is turned for the final prime cycle.  The parameter is ignored if the corresponding PrimeCyclesHeadN parameter = 1.
+PrimeTimeSuckbackEndHead1=50
+# PrimeRateSuckbackEndHead1: The suckback rate applied for the final prime cycle. The parameter is ignored
+# if the corresponding PrimeCyclesHeadN parameter = 1.
+PrimeRateSuckbackEndHead1=100.0
+# TeachAutoFocusMaxAdjustZ : The maximum distance that the dispense downlooking camera is allowed to move from from
+# the start Z position (the current PreInspectPosZ position) during the auto-focus routine that is executed when
+# teaching the pre-inspect position, in mm.
+TeachAutoFocusMaxAdjustZ=3.000
+
+
+[SEQUENCE]
+# The sequence of dispense operations.  Multiple pre-inspection operations are supported using the PAT and PRE
+# operations.  Multiple dispense operations are supported using the DOT, LIN, and ARC operations.  Multiple post-
+# inspection operations are supported using the VIS operation.  Multiple particle detection operations are supported,
+# if available on the system, using the PRT operation.  Stepped UV cure operations are supported, if available on the
+# system, using the UV operation.  Finally, a single external library vision inpsection is supported, if available fo
+# for the system, using the EXT operation.  All dispense function position and distance arguments are expressed in
+# millimeters or degrees and are relative to the calibrated dispense tip position.  The pre-inspection PRE operations
+# are always executed first before any other operations, in the order that they are defined.  All other functions are
+# then executed in the order that they appear in the sequence.  All dispense and post-dispense inspect and EXT
+# operations are performed at the pre-inspect X, Y, and Z position specified by the pre-inspect PRE operation referenced
+# by their IN argument.  UV operations are performed independently of the other operations and occur at either the alignment
+# or spare stations.  The VIS and EXT operations also contain optional XO, YO, and ZO paramaeters expressed in millimeters
+# relative to the referenced pre-inspect position.  Only the result from the last executed EXT function will be recorded
+# in the device data record fields pertaining to this inspection.
+#
+#################################################
+# PRE : Performs a pre-dispense inspection
+#################################################
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : reference index for this pre-inspection, used by other operations to specify reference coordinates relative to this operation
+# PRF : reference id of the pattern to be used in this pre-inspection (see PAT dispense operation)
+# LW  : [optional, default=0] vision light delay (0 to 1000 ms) - typically set to zero unless performing consecutive inspections with different light intensities
+# LD  : vision light intensity for DOAL light (0 to 100% where 0% disables the light)
+# LL  : vision light intensity for line light (0 to 100% where 0% disables the light)
+# EXP : camera acquisition exposure time in milliseconds (0.05 to 1000 ms)
+# XA  : x axis absolute position in mm to perform the vision inspection
+# YA  : y axis absolute position in mm to perform the vision inspection
+# ZA  : z axis absolute position in mm to perform the vision inspection
+# PRE EXAMPLE MINIMAL: PRE IN=1,PRF=1,LD=60,LL=0,EXP=30.0,XA=18.2,YA=2.5,ZA=43.8
+# PRE EXAMPLE FULL:    PRE HD=1,ID=1,IN=1,PRF=1,LW=0,LD=60,LL=0,EXP=30.0,XA=18.2,YA=2.5,ZA=43.8
+#
+#################################################
+# DOT : Dispenses a single dot of material
+#################################################
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : [optional, default=1] reference index of the PRE operation used as the pre-inspection operation
+# X   : x axis position of the dispense dot in mm
+# Y   : y axis position of the dispense dot in mm
+# DT  : [conditionally optional, default=0] dispense time in milliseconds; DT and DV are mutually exclusive; only one can be defined, and it must not be zero
+# DV  : [conditionally optional, default=0] dispense volume in milliliters; DT and DV are mutually exclusive; only one can be defined, and it must not be zero
+# DR  : dispense rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# SW  : [optional, default=0] time to wait in milliseconds after dispense output disabled before enabling suck back output
+# SR  : suck back rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# ST  : suck back time in milliseconds
+# ZO  : [optional, default=0] z axis dispense offset from taught dispense z position
+# ZR  : [optional, default=0] z axis retract distance in mm after operation is complete
+# DOT EXAMPLE MINIMAL (DT): DOT X=10.0,Y=10.0,DT=500,DR=10,SR=10,ST=200
+# DOT EXAMPLE MINIMAL (DV): DOT X=10.0,Y=10.0,DV=0.05,DR=10,SR=10,ST=200
+# DOT EXAMPLE FULL (DT):    DOT HD=1,ID=1,X=10.0,Y=10.0,DT=500,DR=10,SW=0,SR=10,ST=200,ZO=0,ZR=0.5
+# DOT EXAMPLE FULL (DV):    DOT HD=1,ID=1,X=10.0,Y=10.0,DV=0.05,DR=10,SW=0,SR=10,ST=200,ZO=0,ZR=0.5
+#
+#################################################
+# LIN : Dispenses material in the shape of a line
+#################################################
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : [optional, default=1] reference index of the PRE operation used as the pre-inspection operation
+# X1  : x axis start position of the dispense line in mm
+# Y1  : y axis start position of the dispense line in mm
+# X2  : x axis end position of the dispense line in mm
+# Y2  : y axis end position of the dispense line in mm
+# VS  : vector speed of the dispense line motion as a percentage (1 to 100%) of max rated XY stage speed
+# VA  : vector accel/decel of the dispense line motion as a percentage (1 to 100%) of max rated XY stage accel/decel
+# LI  : lead in distance - the distance past the line start position where the dispense output is turned on in mm
+# LO  : lead out distance - the distance before the line end position where the dispense output is turned off in mm; LO ignored if DV > 0        
+# DV  : [optional, default=0, -1=link to Volumetric Dispense steps if WGH=1] dispense volume in ml; after LI, 
+#  dispense at DR until DV reached, ignoring LO and end of motion; if DV not defined, dispense follows LO rule
+#  NOTE: Linking is head-specific for applications with dual dispense heads, e.g. only ARC/DOT/LIN Volumetric Dispense steps with HD=2 
+#   are linked to a Volumetric Weigh step with HD=2. See HD parameter notes above; for single-head applications HD should be omitted.
+# DR  : dispense rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# SW  : [optional, default=0] time to wait in milliseconds after dispense output disabled before enabling suck back output
+# SR  : suck back rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# ST  : suck back time in milliseconds
+# ZO  : [optional, default=0] z axis dispense offset from taught dispense z position
+# ZR  : [optional, default=0] z axis retract distance in mm after operation is complete
+# WGH : [optional, default=0] 1 indicates dispense weigh operation; only one weigh operation is executed per sequence. X1, Y1, & X2 are discarded. Y2 is the length of the line.
+# LIN EXAMPLE MINIMAL: LIN X1=10.0,Y1=10.0,X2=20.0,Y2=10.0,VS=5,VA=25,LI=0,LO=0,DR=10,SR=10,ST=200
+# LIN EXAMPLE FULL:    LIN HD=1,ID=1,IN=1,X1=10.0,Y1=10.0,X2=20.0,Y2=10.0,VS=5,VA=25,LI=0,LO=0,DV=0.070,DR=10,SW=0,SR=10,ST=200,ZO=0,ZR=0.5
+# LIN WEIGH EXAMPLE:   LIN HD=1,X1=0,Y1=0,X2=0,Y2=22.0,VS=5,VA=25,LI=0,LO=0,DR=10,SW=0,SR=10,ST=200,ZO=0,ZR=0.5,WGH=1
+#
+#################################################
+# ARC : Dispenses material in the shape of an arc
+#################################################
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : [optional, default=1] reference index of the PRE operation used as the pre-inspection operation
+# X   : x axis start position of the dispense arc in mm
+# Y   : y axis start position of the dispense arc in mm
+# XR  : x axis radius of the dispense arc in mm
+# YR  : y axis radius of the dispense arc in mm
+# SA  : start angle of the dispense arc in deg
+# IA  : included angle of the dispense arc in deg
+# VS  : vector speed of the dispense arc motion as a percentage (0.01 to 100%) of max rated XY stage speed
+# VA  : vector accel/decel of the dispense arc motion as a percentage (0.01 to 100%) of max rated XY stage accel/decel
+# LI  : lead in distance - the distance past the arc start position where the dispense output is turned on in mm
+# LO  : lead out distance - the distance before the arc end position where the dispense output is turned off in deg; LO ignored if DV > 0
+# DV  : [optional, default=0] dispense volume in milliliters; dispense proceeds at DR until DV is reached, whether motion has ended or not; if not defined dispense follows LO rule
+# DR  : dispense rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# SW  : [optional, default=0] time to wait in milliseconds after dispense output disabled before enabling suck back output
+# SR  : suck back rate as percentage (0 to 100%) of maximum rate (see DispenserType in ksglobal file [DISPENSE] section)
+# ST  : suck back time in milliseconds
+# ZO  : [optional, default=0] z axis dispense offset from taught dispense z position
+# ZR  : [optional, default=0] z axis retract distance in mm after operation is complete
+# ARC EXAMPLE MINIMAL: ARC X=30.0,Y=30.0,XR=10.0,YR=10.0,SA=90,IA=180,VS=5,VA=25,LI=0,LO=0,DR=10,SR=10,ST=200
+# ARC EXAMPLE FULL:    ARC HD=1,ID=1,IN=1,X=30.0,Y=30.0,XR=10.0,YR=10.0,SA=90,IA=180,VS=5,VA=25,LI=0,LO=0,DV=0.220,DR=10,SW=0,SR=10,ST=200,ZO=0,ZR=0.5
+#
+#################################################
+# VIS : Performs post-dispense inspection.
+#################################################
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# FX  : [optional, default=1] fixture number (1 or 2) - applies only to systems have two alignment stations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : [optional, default=1] reference index of the PRE operation used as the pre-inspection operation
+# LW  : [optional, default=0] vision light delay (0 to 1000 ms) - typically set to zero unless performing consecutive inspections with different light intensities
+# LD  : vision light intensity for DOAL light (0 to 100% where 0% disables the light)
+# LL  : vision light intensity for line light (0 to 100% where 0% disables the light)
+# LM  : [optional, default=0] specifies whether the alignment target lights should be turned off during post-dispense inspection
+# EXP : camera acquisition exposure time in milliseconds (0.05 to 1000 ms)
+# SVS : [optional, default=3] save inspection source image where 0 = never save, 1 = always save, 2 = save on failure only, 3 = use ksini file param SaveDispPostSourceImage
+# SVR : [optional, default=3] save inspection result image where 0 = never save, 1 = always save, 2 = save on failure only, 3 = use ksini file param SaveDispPostResultImage
+# XO  : [optional, default=0] x axis offset in mm from configured pre-inspection position
+# Y0  : [optional, default=0] y axis offset in mm from configured pre-inspection position
+# Z0  : [optional, default=0] z axis offset in mm from configured pre-inspection position
+# SM  : segmentation mode (0 to detect dark objects, 1 to detect light objects, 2 to not apply inspection but acquire image only for manual dispense verification prompt)
+# ST  : segmentation threshold (-1 for automatic threshold, or 0 to 100% for manual threshold) for connected component analysis to locate dispensed material
+# SH  : [optional, default=10] segmentation histogram threshold (0 to 100%) for connected component analysis if segmentation threshold = -1
+# RL  : [optional, default=0] search ROI left (0 to 100% as a percentage of image width)
+# RT  : [optional, default=0] search ROI top (0 to 100% as a percentage of image height)
+# RR  : [optional, default=100] search ROI right (0 to 100% as a percentage of image width)
+# RB  : [optional, default=100] search ROI bottom (0 to 100% as a percentage of image height)
+# AMN : [optional, default=don't_care] min area of located dispensed material (0 to 100% as a percentage of image area)
+# AMX : [optional, default=don't_care] max area of located dispensed material (0 to 100% as a percentage of image area)
+# BMN : [optional, default=don't_care] min area of expected bounding box of dispensed material (0 to 100% as a percentage of image area)
+# BMX : [optional, default=don't_care] max area of expected bounding box of dispensed material (0 to 100% as a percentage of image area)
+# PMN : [optional, default=don't_care] min perimeter of located dispensed material (pixels)
+# PMX : [optional, default=don't_care] max perimeter of located dispensed material (pixels)
+# XMN : [optional, default=don't_care] min center x of expected bounding box of located dispensed material relative to the calibrated dispense tip position (mm)
+# XMX : [optional, default=don't_care] max center x of expected bounding box of located dispensed material relative to the calibrated dispense tip position (mm)
+# YMN : [optional, default=don't_care] min center y of expected bounding box of located dispensed material relative to the calibrated dispense tip position (mm)
+# YMX : [optional, default=don't_care] max center y of expected bounding box of located dispensed material relative to the calibrated dispense tip position (mm)
+# CSA : [optional, default=0] enable or disable the cross-sectional analysis step of post-dispense inspection
+# CSR : [optional, default=3] the denominator of the ratio of sampling points to contour points
+# CAW : [optional, default=1] the number of measurements around the chosen point to average together
+# CMN : [optional, default=50] min acceptable dispense width (pixels)
+# CMX : [optional, default=100] max acceptable dispense width (pixels)
+# CSO : [optional, default=50] percentage beyond CMX to scan for oversize dispense
+# CTW : [optional, default=200] the size in contour points of the window used to approximate a tangent to the dispense contour
+# CUT : [optional, default=3] min number of consecutive undersize measurements that will trigger a failure
+# COT : [optional, default=3] min number of consecutive oversize measurements that will trigger a failure
+# VIS EXAMPLE MINIMAL: VIS LD=0,LL=10.0,EXP=30,SM=1,ST=60
+# VIS EXAMPLE FULL:    VIS HD=1,ID=1,IN=1,LW=0,LD=0,LL=10.0,LM=0,EXP=30,SVS=3,SVR=3,SS=3,SR=3,XO=0.000,YO=0.000,ZO=0.000,SM=1,ST=60,SH=10,RL=0,RT=0,RR=100,RB=100,AMN=10.0,AMX=15.0,BMN=60.0,BMX=70.0,PMN=1000,PMX=1500,XMN=-0.25,XMX=0.25,YMN=-0.25,YMX=0.25,CSA=1,CSR=3,CAW=1,CMN=50,CMX=100,CSO=50,CTW=200,CUT=3,COT=3
+#
+#################################################
+# PRT : Performs particle test. NOTE: To specify specific camera registers to set prior to performing the
+#       particle test include a section in the CameraFileDispense file called [Particle Test Pre], and to specify
+#       registers to set after performing this test include a section in the CameraFileDispense called [Particle Test Post].
+#################################################
+# STN : [optional, default=1] the station to perfom the test at (1 = dispense station, 3 = spare station)
+# HD  : [optional, default=1] head number (1 or 2) where 1 is primary dispense head, 2 is secondary dispense head in two head configurations
+# ID  : [optional, default=1] index number for array camera applications with non-monolithic lens attach where separate multiple dispense/align operations are performed on the same device
+# IN  : [optional, default=1] reference index of the PRE operation used as the pre-inspection operation
+# LW  : [optional, default=100 vision light delay (0 to 1000 ms) - typically set to 100 ms to ensure the particle test light is updated prior to performing the test
+# LP  : vision light intensity for particle light (0 to 100% where 0% disables the light)
+# LM  : [optional, default=1] specifies whether the alignment target lights should be turned off during the particle test. 
+# XO  : [optional, default=0] x axis offset in mm from configured pre-inspection position
+# YO  : [optional, default=0] y axis offset in mm from configured pre-inspection position
+# ZO  : [optional, default=0] z axis offset in mm from configured pre-inspection position
+# BD  : [optional, default=0] the size of the border in pixels to be excluded from the test
+# CR  : [optional, default=0] for defining a circular inclusion zone - the percentage of image dimension, larger of width or height, to include in the test (0 to 500%)
+# FS  : [optional, default=5] low pass filter size from 3 to 21 in pixels - must be an odd number and will be forced up to the next nearest odd value if necessary
+# NS  : [optional, default=50] particle neighboring evaluation size from 3 to 201 - must be an odd number and will be forced up to the next nearest odd value if necessary - when evaluating particles each pixel is compared to the average pixel calculated from the local neighboring pixels
+# PT  : [optional, default=0.8] particle threshold percentage from 0.0 to 100.0 expressed as the percentage deviation of a pixel from the average intensity of its neighboring pixels
+# PM  : [optional, default=1] particle minimum size in pixels at which particles of this size or smaller are not considered particles
+# IRW : [optional, default=50] width of the inner evaluation region of the image from 0 to 100 expressed as a percentage of image width
+# IRH : [optional, default=50] height of the inner evaluation region of the image from 0 to 100 expressed as a percentage of image height
+# ITC : [optional, default=5] inner total count threshold - the maximum number of particles allowed in the inner evaluation region of the image - a particle is defined as a group of connected pixels that all deviate from their neighborhood by more than the specified particle threshold
+# ILS : [optional, default=3] inner largest size threshold - the maximum allowed size in pixels of any single particle found in the inner evaluation region of the image
+# ITS : [optional, default=10] inner total size threshold - the maximum allowed size in pixels of all particles combined found in the inner evaluation region of the image
+# OTC : [optional, default=5] outer total count threshold - the maximum number of particles allowed in the outer evaluation region of the image - a particle is defined as a group of connected pixels that all deviate from their neighborhood by more than the specified particle threshold
+# OLS : [optional, default=3] outer largest size threshold - the maximum allowed size in pixels of any single particle found in the outer evaluation region of the image
+# OTS : [optional, default=10] outer total size threshold - the maximum allowed size in pixels of all particles combined found in the outer evaluation region of the image
+# RE  : [optional, default=1] report each particle - if non-zero the size and location of each particle will be reported in the output result file
+# LMN : [optional, default=0] minimum pixel threshold - the minimum average pixel value of the image from 0.0 to 100.0 expressed as the percentage of the maximum pixel value - set equal to 0 to disable
+# LMX : [optional, default=0] maximum pixel threshold - the maximum average pixel value of the image from 0.0 to 100.0 expressed as the percentage of the maximum pixel value - set equal to 0 to disable
+# PRT EXAMPLE MINIMAL: PRT LP=10.0
+# PRT EXAMPLE FULL:    PRT HD=1,ID=1,IN=1,LW=100,LP=10.0,LM=0,XO=0.000,YO=0.000,ZO=0.000,BD=10,CR=0.0,FS=5,NS=50,PT=0.8,PM=1,IRW=50.0,IRH=50.0,ITC=5,ILS=3,ITS=10,OTC=5,OLS=3,OTS=10,RE=1,LMN=0,LMX=0
+#
+#################################################
+# RIT : Performs relative illumination / dark corner test at the spare station.  For relative illumination, the
+# test measures the illumination at the center and four corners of the image and calculates relative illumination
+# for each corner as the corner measurement divided by the center measurement expressed as as a percentage.
+# For dark corner, the test measures the illumination at the four corners of the image using two specified
+# ROIs where the first ROI is the RCN parameter and the second ROI is the DCN parameter.  Dark corner is
+# calculated for each corner as the illumination in each corner defined by the DCN parameter divided by the
+# illumination in each corner defined by the RCN parameter.
+# NOTE: To specify specific camera registers to set prior to performing the relative illumination / dark corner
+# test include a section in the CameraFileSpare file called [Relative Illumination Test Pre], and to specify
+# registers to set after performing this test include a section in the CameraFileSpare file called
+# [Relative Illumination Test Post].
+#################################################
+# LW  : vision light delay (0 to 1000 ms)
+# LD  : vision light intensity for dome light (0 to 100% where 0% disables the light)
+# TTR : relative illumination test threshold - minimum allowed test value to produce a PASS test result
+# TTD : dark corner test threshold - minimum allowed test value to produce a PASS test result
+# RCT : width and height of the center ROI in pixels
+# RCN : width and height of the relative illumination corner ROIs in pixels
+# DCN : width and height of the dark corner ROIs in pixels - ROIs will be positioned at outer extent of the RI ROIs
+# RX : percentage distance from image center to left / right boundary of image to position corner ROIs where 100% would have outer edge of ROIs at first / last column of image
+# RY : percentage distance from image center to top / bottom boundary of image to position corner ROIs where 100% would have outer edge of ROIs at first / last row of image
+# RIT EXAMPLE: RIT LW=100,LD=50,TTR=0.5,TTD=0.8,RCT=12,RCN=12,DCN=6,RX=100,RY=100
+#
+#################################################
+# OCT : Performs optical centration test at the spare station.  NOTE: To specify specific camera registers to set
+# prior to performing the relative illumination test include a section in the CameraFileSpare file called
+# [Optical Centration Test Pre], and to specify registers to set after performing this test include a section in
+# the CameraFileSpare file called [Optical Centration Test Post].
+#################################################
+# LW  : vision light delay (0 to 1000 ms)
+# LD  : vision light intensity for dome light (0 to 100% where 0% disables the light)
+# NF : number of image frames to acquire (from 1 to 50)
+# FS : low pass filter size - set = 0 to disable low pass filter, or an odd value between 3 and 51 to enable filter
+# LMN : minimum pixel threshold - the minimum average pixel value of the image from 0.0 to 100.0 expressed as the percentage of the maximum pixel value - set equal to 0 to disable
+# LMX : maximum pixel threshold - the maximum average pixel value of the image from 0.0 to 100.0 expressed as the percentage of the maximum pixel value - set equal to 0 to disable
+# OFX : maximum x offset - the maximum permissible x offset for centration allowed to pass the test, in mm
+# OFY : maximum y offset - the maximum permissible y offset for centration allowed to pass the test, in mm
+# OCT EXAMPLE: OCT LW=100,LD=50,NF=5,FS=0,LMN=25,LMX=75,OFX=0.5,OFY=0.5
+
+
+# DISPENSE PRE-INSPECTION
+#ST Housing
+PAT PRF=1,FIL="Jobs\FebPreDispenseInspection_Moose_B4_LCP.hdb"
+PRE IN=1,PRF=1,LW=100,LD=00,LL=100,EXP=300.0,XA=41.165, YA=96.784, ZA=48.750
+#PRE IN=1,PRF=1,LW=100,LD=00,LL=100,EXP=250.0,XA=54.4, YA=40, ZA=47
+
+# PARTICLE TEST - DISPENSE STATION
+# Strict Spec
+#PRT STN=1,LW=100,LP=15,LM=1,BD=0,FS=9,XO=-2.02,YO=-4.60,ZO=2.6,NS=13,PM=7,PT=0.4,IRH=100,IRW=100,ITC=10,ILS=10,ITS=20,OTC=5,OLS=5,OTS=5,RE=1
+# Wide Open Spec
+PRT STN=1, HD=1, ID=1, IN=1, LW=100, LP=25, LM=1, XO=0.0, YO=2.0, ZO=0.0, BD=10, CR=0.0, FS=5, NS=71, PT=1.0, PM=30, IRW=50.0, IRH=50.0, ITC=100, ILS=1000, ITS=100000, OTC=200, OLS=10000, OTS=100000, RE=1, LMN=0, LMX=0
+
+# DISPENSE ADHESIVE
+#Dispense Sequence: *Tip:Viewweg I-0 0.51mm 45degree 1/2in F560089-45; *ECOPEN450 *OB786 *Weight 0.57g
+#Volume ratio 80%
+#ARC HD=1, ID=1, IN=1, X=24.05, Y=-6.65, XR=8.9, YR=8.9, SA=0, IA=382, VS=20, VA=10, LI=1.0, LO=12.0, DR=80, SW=0, SR=50, ST=200, ZO=-9.253, ZR=1.0
+#Volume ratio 60%
+#ARC HD=1, ID=1, IN=1, X=24.3, Y=-6.2, XR=8.9, YR=8.9, SA=0, IA=392, VS=20, VA=10, LI=1.0, LO=12.0, DR=36, SW=0, SR=50, ST=200, ZO=-10.8, ZR=1.0
+#ARC HD=1, ID=1, IN=1, X=50, Y=56.145, XR=8.9, YR=8.9, SA=0, IA=392, VS=20, VA=10, LI=0.0, LO=15.0, DR=38, SW=0, SR=50, ST=200, ZO=33.8, ZR=1.0
+#ARC HD=1, ID=1, IN=1, X=-5, Y=-20, XR=8.9, YR=8.9, SA=0, IA=392, VS=20, VA=10, LI=0.0, LO=15.0, DR=38, SW=0, SR=50, ST=200, ZO=33.8, ZR=1.0
+ARC HD=1, ID=1, IN=1,DV=0, X=9.2, Y=-6.4, XR=8.9, YR=8.9, SA=0, IA=449, VS=20, VA=10, LI=1.0, LO=20.0, DR=42, SW=0, SR=50, ST=300, ZO=0, ZR=1.0
+
+
+#linear movement to prevent collis#ion
+#LIN HD=1, ID=1, IN=1, X1=12.0 ,Y1=-20.0, X2=12.5, Y2=-20.0,VS=10, VA=25, LI=0, LO=0,DV=0, DR=0, SW=0, SR=0, ST=0, ZO=0.00, ZR=0
+
+# DISPENSE POST-INSPECTION
+VIS LD=00,LL=100.0,EXP=80,RL=10,RT=1,RR=90,RB=99,SM=1,ST=50,SH=5,AMN=10,AMX=25,BMN=60,BMX=80,PMN=3000,PMX=8000
+
+# PARTICLE TEST - SPARE STATION
+# PRT STN=3,LW=200,LP=20,FS=19,NS=201,PM=1,PT=1.5,IRH=100,IRW=100,ITC=1,ILS=10,ITS=20,OTC=5,OLS=5,OTS=5,RE=1
+PRT STN=3,HD=1,ID=1,IN=1,LW=500,LM=1,LP=100,FS=7,NS=131,PT=0.8,PM=30,IRH=50,IRW=50,ITC=3,ILS=1000,ITS=2800,OTC=5,OLS=2000,OTS=9000,RE=1
