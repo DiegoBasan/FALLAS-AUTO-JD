@@ -333,7 +333,7 @@ function route(){
   if(ap) mountAportes(ap.el, ap); else ocultarFab();
   if(raw==='info') montarCuenta($('out'));
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode,.doc').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'kasalis'}), 1500); }
-  else track('vista', {ruta: 'kasalis/' + (raw || 'inicio'), titulo});
+  else track('vista', {ruta: 'kasalis/' + (raw || 'inicio'), titulo: title});
   $('back').style.display = sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';

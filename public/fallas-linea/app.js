@@ -97,7 +97,7 @@ function route(){
   if(ap) mountAportes(ap.el, ap); else ocultarFab();
   if(raw==='info') montarCuenta($('out'));
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'linea'}), 1500); }
-  else track('vista', {ruta: 'linea/' + (raw || 'inicio'), titulo}); $('back').style.display = sub ? '' : 'none';
+  else track('vista', {ruta: 'linea/' + (raw || 'inicio'), titulo: title}); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
