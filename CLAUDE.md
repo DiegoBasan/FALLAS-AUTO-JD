@@ -13,7 +13,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
 
 ## Estructura
 - `public/` — lo que se publica.
-  - Es **una sola app instalable** (iPhone: Safari → Compartir → Agregar a inicio): `manifest.webmanifest` (scope `/`), `sw.js` único (red primero, copia sin señal; la API no se guarda), iconos en `icons/` + `apple-touch-icon.png`. Los `sw.js` de `buscador-kasalis/` y `fallas-linea/` solo desinstalan la versión vieja.
+  - Es **una sola app instalable** (iPhone: Safari → Compartir → Agregar a inicio): `manifest.webmanifest` (scope `/`), `sw.js` único (red primero, copia sin señal; la API no se guarda), iconos en `icons/` + `apple-touch-icon.png` (mira azul de Kasalis; sin fondo en manifest/favicon, fondo blanco en `apple-touch-icon` porque iOS pinta de negro lo transparente). Los `sw.js` de `buscador-kasalis/` y `fallas-linea/` solo desinstalan la versión vieja.
   - `shared/app.js` (en todas las páginas): barra de pestañas flotante estilo iOS 26 (cápsula de vidrio casi de lado a lado: Inicio · Kasalis · Línea · Docs · Cuenta), modo standalone, registro del service worker. Estilos de app en `shared/ui.css` (`.gnav`, `.seg`, `--nav-h`/`--pad-b`/`--fab-b`).
   - `index.html` Inicio (búsqueda general, secciones, atajos por línea). `cuenta/` Cuenta (mis aportaciones, notas, atajos, instalar). `login/` entrar.
   - Dentro de Kasalis y Línea las sub-secciones van en un control segmentado arriba (Kasalis: Fallas · Códigos · Guías; Línea: Fallas · Procesos). En Kasalis los iconos llevan el color de su estación (`ESTACIONES` en `app.js`: Alineación `#12A594`, Dispensado `#D6409F`, Software/MES `#3E63DD`, General `#5E6B78`); en Línea el color de la línea.
