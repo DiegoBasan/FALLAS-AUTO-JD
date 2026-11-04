@@ -43,7 +43,7 @@ const CSS = `
 .ap .del{margin-top:6px;border:0;background:none;color:#C2292E;font:inherit;font-size:12.5px;font-weight:700;padding:0;cursor:pointer}
 .ap-sec{margin-top:16px}
 .ap-sec h4{margin:0 4px 6px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2,#777)}
-.ap-fab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom) + 136px);z-index:25;height:52px;padding:0 20px 0 16px;border-radius:99px;border:0;background:var(--ink,#141416);color:var(--bg,#fff);font:inherit;font-size:15px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;cursor:pointer}
+.ap-fab{position:fixed;right:16px;bottom:var(--fab-b,calc(env(safe-area-inset-bottom) + 136px));z-index:45;height:52px;padding:0 20px 0 16px;border-radius:99px;border:0;background:var(--ink,#141416);color:var(--bg,#fff);font:inherit;font-size:15px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;cursor:pointer}
 .ap-fab span{font-size:22px;line-height:1}
 .ap-sh{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
 .ap-sh .pp{background:var(--surface,#fff);color:var(--ink,#141416);width:min(620px,100%);max-height:92dvh;overflow:auto;border-radius:26px 26px 0 0;padding:16px 16px calc(72px + env(safe-area-inset-bottom))}
@@ -63,7 +63,7 @@ const CSS = `
 .ap-sh .acts .ok{background:var(--ink,#141416);color:var(--bg,#fff);border-color:transparent}
 .ap-sh .acts button:disabled{opacity:.5}
 .ap-sh .err{color:#C2292E;font-size:13.5px;margin-top:8px}
-.ap-toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 200px);transform:translateX(-50%);z-index:80;background:var(--ink,#141416);color:var(--bg,#fff);padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 10px 28px rgba(0,0,0,.25)}
+.ap-toast{position:fixed;left:50%;bottom:calc(var(--fab-b,140px) + 70px);transform:translateX(-50%);z-index:80;background:var(--ink,#141416);color:var(--bg,#fff);padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 10px 28px rgba(0,0,0,.25)}
 .ap-lst{display:grid;gap:8px}
 .ap-lst .ttl{font-weight:700;font-size:14px;margin-bottom:2px}
 .ap-lst a.ttl{color:inherit}
@@ -172,9 +172,9 @@ export async function montarCuenta(root){
   try{
     const {yo: u} = await yo();
     root.querySelector('#cuentaBox').innerHTML = `<b style="font-size:16px">${esc(u.nombre)}</b><div class="faint">No. ${esc(u.num)} · ${NIVEL_TXT[u.nivel]||u.nivel}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${u.nivel==='admin'?'<a class="btn" href="/admin/" style="text-decoration:none">🛠 Panel admin</a>':''}<button class="btn" id="cPin">Cambiar contraseña</button><button class="btn" id="cOut">Salir</button></div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${u.nivel==='admin'?'<a class="btn" href="/admin/" style="text-decoration:none">🛠 Panel admin</a><button class="btn" id="cPin">Contraseña del panel</button>':''}<button class="btn" id="cOut">Salir</button></div>`;
     root.querySelector('#cOut').onclick = async ()=>{ await fetch('/api/logout', {method:'POST'}); location.href = '/login/'; };
-    root.querySelector('#cPin').onclick = async ()=>{ const a = prompt('Contraseña actual'); if(a===null) return; const n = prompt('Nueva contraseña (mínimo 4)'); if(!n) return;
+    if(root.querySelector('#cPin')) root.querySelector('#cPin').onclick = async ()=>{ const a = prompt('Contraseña actual'); if(a===null) return; const n = prompt('Nueva contraseña (mínimo 4)'); if(!n) return;
       try{ await api('cambiar-pin', {method:'POST', body: JSON.stringify({actual:a, nueva:n})}); toast('Contraseña cambiada'); }catch(err){ alert(err.message); } };
     const {aportaciones} = await api('aportaciones?mias=1');
     root.querySelector('#misAp').innerHTML = aportaciones.map(a=>apHTML(a, {conTitulo:true, miNum:u.num})).join('') || '<div class="faint" style="padding:6px 4px">Todavía no has aportado. En cualquier falla toca <b>＋ Aportar</b>.</div>';

@@ -7,7 +7,7 @@ import {PROCS, procInline, guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA, plain} from '../shared/txt.js';
 import {flowFijo} from '../shared/flow.js';
 import {DEBUG} from './data/debug.js';
-import {yo, track, mountAportes, ocultarFab, cuentaHTML, montarCuenta, puedeVer} from '../shared/cuenta.js';
+import {yo, track, mountAportes, ocultarFab, puedeVer} from '../shared/cuenta.js';
 import {explicaHTML, EX_CSS} from '../shared/explica.js';
 import {conImagenes} from './data/imagenes.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
@@ -147,23 +147,28 @@ function docsHTML(docs, terms){
 /* ---------- vistas ---------- */
 /* inicio: lo más común arriba y lo demás agrupado por estación de la mesa */
 const COMUNES = ['comunicacion','alineacion','vis233','retest','despega'];
+/* [nombre, fallas, color]: el color de la estación pinta el icono de cada falla y su flujo */
 const ESTACIONES = [
-  ['Alineación (+UV)', ['alineacion','prefocus','lensplace','pick-choca','despega','gripper','retest']],
-  ['Dispensado', ['vis233','dispensado','delo','particulas']],
-  ['Software / MES', ['software','progresion']],
-  ['General', ['comunicacion','mecanico']],
+  ['Alineación (+UV)', ['alineacion','prefocus','lensplace','pick-choca','despega','gripper','retest'], '#12A594'],
+  ['Dispensado', ['vis233','dispensado','delo','particulas'], '#D6409F'],
+  ['Software / MES', ['software','progresion'], '#3E63DD'],
+  ['General', ['comunicacion','mecanico'], '#5E6B78'],
 ];
-const card = f => `<div class="mode" data-go="f/${f.id}"><div class="top-r"><div class="ic">${icon(f.id)}</div></div><b>${esc(plain(f.titulo))}</b><span>${esc(plain(f.corto))}</span>${codeChips(f.codigos.slice(0,4))}</div>`;
+const estDe = id => ESTACIONES.find(e=>e[1].includes(id)) || ['Otras', [], '#FF7F66'];
+const colDe = id => estDe(id)[2];
+const dotEst = e => `<i class="edot" style="--ic:${e[2]}"></i>`;
+const card = f => `<div class="mode" data-go="f/${f.id}" style="--ic:${colDe(f.id)}"><div class="top-r"><div class="ic">${icon(f.id)}</div></div><b>${esc(plain(f.titulo))}</b><span>${esc(plain(f.corto))}</span>${codeChips(f.codigos.slice(0,4))}</div>`;
 function homeView(){
   const byId = id => FALLAS.find(f=>f.id===id);
   const usados = new Set(ESTACIONES.flatMap(e=>e[1]));
   const resto = FALLAS.filter(f=>!usados.has(f.id));
-  let h = `${sh('cause','Lo más común',1)}<div class="list top5">${COMUNES.map(byId).filter(Boolean).map(f=>`<div class="row" data-go="f/${f.id}"><b class="ic" style="width:36px;height:36px">${icon(f.id)}</b><span>${esc(f.titulo)}<small>${esc(f.codigos.slice(0,4).join(' · '))}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
-  h += `<hr class="sep">${sh('steps','Por estación',1)}<img class="mesa" src="fotos/manual/estaciones.jpg" alt="Estaciones de la mesa">`;
-  ESTACIONES.forEach(([n, ids])=>{ const fs = ids.map(byId).filter(Boolean); if(fs.length) h += `<h3 class="lb">${esc(n)}</h3><div class="modes">${fs.map(card).join('')}</div>`; });
-  if(resto.length) h += `<h3 class="lb">Otras</h3><div class="modes">${resto.map(card).join('')}</div>`;
-  h += `<hr class="sep"><div class="link" data-go="tools/linea"><span>🧮 Explicar una línea ARC / VIS / PRE</span><span class="faint">›</span></div>`;
-  h += `<details class="more"><summary>${sh('book','Guías del programa ('+Object.keys(PROCS).length+')')}</summary><div class="in">${procList(Object.keys(PROCS))}</div></details>${LEYENDA}`;
+  let h = `${sh('cause','Lo más común',1)}<div class="list top5">${COMUNES.map(byId).filter(Boolean).map(f=>`<div class="row" data-go="f/${f.id}" style="--ic:${colDe(f.id)}"><b class="ic" style="width:36px;height:36px">${icon(f.id)}</b><span>${esc(f.titulo)}<small>${esc(f.codigos.slice(0,4).join(' · '))}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
+  h += `<hr class="sep">${sh('steps','Por estación',1)}`;
+  ESTACIONES.forEach(e=>{ const fs = e[1].map(byId).filter(Boolean); if(fs.length) h += `<h3 class="lb">${dotEst(e)}${esc(e[0])}</h3><div class="modes">${fs.map(card).join('')}</div>`; });
+  if(resto.length) h += `<h3 class="lb">${dotEst(estDe(''))}Otras</h3><div class="modes">${resto.map(card).join('')}</div>`;
+  h += `<hr class="sep">${sh('tip','Herramientas',1)}<div class="link" data-go="tools/linea"><span>🧮 Explicar una línea ARC / VIS / PRE</span><span class="faint">›</span></div>
+    <div class="link" data-go="guias"><span>📘 Guías del programa (${Object.keys(PROCS).filter(visible).length})</span><span class="faint">›</span></div>
+    <div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>${LEYENDA}`;
   return h;
 }
 let SES = {nivel:'operador', procNiveles:{}};
@@ -172,9 +177,13 @@ function procList(ids){
   ids = ids.filter(visible);
   return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-go="p/${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${esc(p.permisos)}${p.pasos.length ? ' · '+p.pasos.length+' pasos' : ''}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
 }
+function guiasTab(){
+  return `${sh('book','Guías del programa',1)}<div class="faint" style="margin:-6px 4px 10px;font-size:13px">Paso a paso de lo que se hace en el software de la Kasalis.</div>${procList(Object.keys(PROCS))}${LEYENDA}`;
+}
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
-  return `<div class="head"><div class="k"><span class="tag">Kasalis</span> Modo de falla</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
+  const e = estDe(f.id);
+  return `<div class="head"><div class="k"><span class="tag">Kasalis</span> <span class="etag" style="--ic:${e[2]}">${esc(e[0])}</span></div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
     <div class="fv"><section>${sh('steps','Qué hacer, paso a paso',1)}${gflow(f)}${f.link?`<a class="link" href="${f.link.href}"><span>${esc(f.link.t)}</span><span class="faint">↗</span></a>`:''}${['vis233','dispensado'].includes(f.id)?`<div class="link" data-go="tools/linea"><span>🧮 Explicar la línea ARC / VIS de la máquina</span><span class="faint">›</span></div>`:''}</section>
     <aside>${causesHTML(f)}</aside></div>${LEYENDA}`;
 }
@@ -265,19 +274,6 @@ function toolView(){
     <div class="ex-ej">Ejemplos: ${Object.keys(EJEMPLOS).map(k=>`<button data-ej="${k}">${k}</button>`).join('')}</div>
     <div id="exOut">${last?explicaHTML(last):''}</div>${LEYENDA}`;
 }
-function infoTab(){
-  let notas = ''; try{ notas = localStorage.getItem('jd_misnotas')||''; }catch(e){}
-  return `${cuentaHTML()}<div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>
-    ${sh('info','Cómo se usa',1)}<div class="install">
-    1. Busca el <b>código</b> que sale en la pantalla (ej. 219) o toca la falla.<br>
-    2. Sigue los pasos en orden y contesta <b>SÍ / NO</b>.<br>
-    3. ¿Algo no cuadra o falta? Toca <b>＋ Aportar</b> en la falla.<br>
-    ${LEYENDA.replace('class="leyenda"','class="leyenda" style="margin:8px 0 0"')}</div>
-    ${sh('doc','Mis notas (solo en este celular)')}<div class="install"><textarea id="misnotas" rows="5" placeholder="Contraseñas, extensiones, recordatorios… No se suben a ningún lado." style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--surface);color:inherit">${esc(notas)}</textarea></div>
-    <h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Safari → <b>Compartir</b> → <b>Agregar a pantalla de inicio</b>. En Android: menú ⋮ → Instalar app.</div>
-    <div class="link" onclick="location.href='/docs/'"><span>📄 Documentos: manual, códigos de error, parámetros</span><span class="faint">›</span></div>
-    <div class="link" onclick="location.href='../index.html'"><span>Inicio JD Fallas</span><span class="faint">›</span></div>`;
-}
 function searchView(q){
   if(PROCESS[q.toLowerCase()]) return processView(q.toLowerCase());
   const n = /^-?\d+$/.test(q) ? parseInt(q,10) : null;
@@ -295,9 +291,10 @@ function searchView(q){
   const ps = Object.keys(PROCS).filter(id=>JSON.stringify(PROCS[id]).toLowerCase().includes(ql));
   let h = '';
   if(ps.length) h += `<h3 class="lb">Guías del programa (${ps.length})</h3>${procList(ps)}`;
-  if(fs.length) h += `<h3 class="lb">Fallas (${fs.length})</h3><div class="modes">${fs.map(f=>`<div class="mode" data-go="f/${f.id}"><div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span></div>`).join('')}</div>`;
+  if(fs.length) h += `<h3 class="lb">Fallas (${fs.length})</h3><div class="modes">${fs.map(f=>`<div class="mode" data-go="f/${f.id}" style="--ic:${colDe(f.id)}"><div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span></div>`).join('')}</div>`;
   h += `<h3 class="lb">Códigos (${hits.length})</h3><div class="list">${hits.slice(0,50).map(c=>`<div class="row" data-go="c/${c.code}|${c.src}"><b>${c.code}</b><span>${esc(c.name)}<small>${esc(translate(c.name))}</small></span><span class="faint" style="font-size:11px">${c.src==='plc'?'PLC':'KSV'}</span></div>`).join('') || '<div class="empty">Ningún código coincide.</div>'}</div>`;
   h += `<details class="more"><summary>En el manual y documentos (${docs.length})</summary><div class="in">${docsHTML(docs,[q])}</div></details>`;
+  h += `<a class="link" href="/fallas-linea/#s/${encodeURIComponent(q)}"><span>Buscar "${esc(q)}" en Fallas de línea</span><span class="faint">›</span></a>`;
   return h;
 }
 
@@ -308,12 +305,13 @@ function route(){
   let html, title = 'Fallas Kasalis', tab = 'fallas', sub = false;
   if(!raw){ html = homeView(); }
   else if(raw==='codigos'){ html = codesTab(); title='Códigos'; tab='codigos'; }
-  else if(raw==='info'){ html = infoTab(); title='Más'; tab='info'; }
+  else if(raw==='info'){ location.replace('/cuenta/'); return; }
+  else if(raw==='guias'){ html = guiasTab(); title='Guías del programa'; tab='guias'; }
   else if(raw==='tools/linea'){ html = toolView(); title='Explicar línea'; sub = true; }
-  else if(raw==='debug'){ html = debugList(); title='Debug'; tab='info'; sub = true; }
-  else if(raw.startsWith('debug/')){ html = debugView(raw.slice(6)); title='Debug'; tab='info'; sub = true; }
+  else if(raw==='debug'){ html = debugList(); title='Debug'; sub = true; }
+  else if(raw.startsWith('debug/')){ html = debugView(raw.slice(6)); title='Debug'; sub = true; }
   else if(raw.startsWith('f/')){ const f=FALLAS.find(x=>x.id===raw.slice(2)); html = fallaView(raw.slice(2)); title = f?f.titulo:title; sub = true; }
-  else if(raw.startsWith('p/')){ const p = PROCS[raw.slice(2)]; html = procView(raw.slice(2)); title = p ? 'Guía' : title; sub = true; }
+  else if(raw.startsWith('p/')){ const p = PROCS[raw.slice(2)]; html = procView(raw.slice(2)); title = p ? 'Guía' : title; sub = true; tab='guias'; }
   else if(raw.startsWith('s/')){ const q=raw.slice(2); html = searchView(q); title = 'Buscar'; tab=''; sub = true; if(document.activeElement!==$('q')) $('q').value=q; }
   else {
     const [c, s] = (raw.startsWith('c/') ? raw.slice(2) : raw).split('|');
@@ -326,18 +324,18 @@ function route(){
   }
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value='';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(conImagenes(f), {accent:'#FF7F66', base:new URL('./', location.href).href, procHTML: st => st.proc && visible(st.proc) ? procInline(st.proc) : ''}); });
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(conImagenes(f), {accent:colDe(f.id), base:new URL('./', location.href).href, procHTML: st => st.proc && visible(st.proc) ? procInline(st.proc) : ''}); });
   let ap = null;
   const gf = $('out').querySelector('.gflow');
   if(gf){ const f = FALLAS.find(x=>x.id===gf.dataset.fid); ap = {el: gf, ref:'kasalis:'+f.id, app:'kasalis', fallaId:f.id, titulo: plain(f.titulo), pasos: f.flujo.map(x=>plain(x.p))}; }
   const gp = $('out').querySelector('.gflow-p');
   if(gp){ const p = PROCS[gp.dataset.pid]; ap = {el: gp, ref:'kasalis-p:'+gp.dataset.pid, app:'kasalis', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
   if(ap) mountAportes(ap.el, ap); else ocultarFab();
-  if(raw==='info') montarCuenta($('out'));
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode,.doc').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'kasalis'}), 1500); }
   else track('vista', {ruta: 'kasalis/' + (raw || 'inicio'), titulo: title});
   $('back').style.display = sub ? '' : 'none';
-  document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
+  document.querySelectorAll('#seg a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
+  $('seg').hidden = sub;
   $('clr').style.display = $('q').value ? 'block' : 'none';
   if(!raw.startsWith('s/')) window.scrollTo(0,0);
 }
@@ -351,7 +349,7 @@ $('q').addEventListener('input', ()=>{ clearTimeout(tmr); const v=$('q').value.t
   tmr = setTimeout(()=>{ if(!v){ location.replace('#'); return; } const h='#s/'+encodeURIComponent(v); if(location.hash.startsWith('#s/')) location.replace(h); else go(h.slice(1)); }, 250); });
 $('q').addEventListener('keydown', e=>{ if(e.key==='Enter'){ $('q').blur(); } });
 $('clr').onclick = ()=>{ $('q').value=''; $('clr').style.display='none'; location.hash=''; };
-document.querySelectorAll('.tabs a').forEach(a=>a.addEventListener('click',()=>{ $('q').value=''; depth=0; }));
+document.querySelectorAll('#seg a').forEach(a=>a.addEventListener('click',()=>{ $('q').value=''; depth=0; }));
 $('out').addEventListener('input', e=>{ if(e.target.id==='misnotas'){ try{ localStorage.setItem('jd_misnotas', e.target.value); }catch(_){} }
   if(e.target.id==='exIn'){ const v = e.target.value; try{ localStorage.setItem('jd_ex_linea', v); }catch(_){} $('exOut').innerHTML = v.trim() ? explicaHTML(v) : ''; } });
 $('out').addEventListener('click', e=>{ const b = e.target.closest('[data-ej]'); if(b){ const t = $('exIn'); t.value = EJEMPLOS[b.dataset.ej]; t.dispatchEvent(new Event('input', {bubbles:true})); } });

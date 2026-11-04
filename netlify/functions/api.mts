@@ -8,11 +8,11 @@
 */
 import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
-import { COOKIE, NIVELES, rango, firmar, verificar, hashPin, checkPin, type Sesion, type Nivel } from "../lib/auth.mts";
+import { COOKIE, NIVELES, rango, firmar, verificar, hashPin, checkPin, esAdmin, type Sesion, type Nivel } from "../lib/auth.mts";
 import { secreto } from "../lib/secreto.mts";
 const ADMIN_NUM = () => Netlify.env.get("ADMIN_NUM") || ""; // solo para recrear el primer admin si se pierde (variable de entorno)
 
-const DIAS_SESION = 30;
+const DIAS_SESION = 180;   // app en el celular: que no pida entrar seguido
 const TIPOS = ["comentario", "foto", "correccion", "solucion", "duda"];
 const st = (name: string) => getStore({ name, consistency: "strong" });
 const json = (d: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -37,8 +37,8 @@ async function getUsuario(num: string): Promise<Usuario | null> {
 }
 const publico = (u: Usuario) => ({ num: u.num, nombre: u.nombre, nivel: u.nivel, activo: u.activo, creado: u.creado, tienePin: !!u.pin });
 
-async function abrirSesion(u: Usuario, context: Context) {
-  const s: Sesion = { num: u.num, nombre: u.nombre, nivel: u.nivel, exp: Date.now() + DIAS_SESION * 864e5 };
+async function abrirSesion(u: Usuario, context: Context, adm = false) {
+  const s: Sesion = { num: u.num, nombre: u.nombre, nivel: u.nivel, exp: Date.now() + DIAS_SESION * 864e5, ...(adm && u.nivel === "admin" ? { adm: true } : {}) };
   context.cookies.set({ name: COOKIE, value: await firmar(s, await secreto("sesion")), path: "/", httpOnly: true, secure: true, sameSite: "Lax", expires: new Date(s.exp) });
   return s;
 }
@@ -63,26 +63,26 @@ export default async (req: Request, context: Context) => {
   const body = async () => { try { return await req.json(); } catch { return {}; } };
 
   /* ---------- sin sesión ---------- */
+  /* Entrar: solo con el número de control. El panel admin pide además la contraseña del admin (r1 = "admin"). */
   if (r0 === "login" && M === "POST") {
-    const { num, pin } = await body();
+    const { num } = await body();
     const n = limpio(num, 20);
     const u = await getUsuario(n);
     if (!u || !u.activo) return err("Número de control no registrado. Pide tu alta al administrador.", 401);
-    if (!u.pin) return json({ crearPin: true, nombre: u.nombre });
-    if (!(await checkPin(limpio(pin, 100), u.pin))) return err("Contraseña incorrecta.", 401);
     const s = await abrirSesion(u, context);
     return json({ ok: true, yo: { num: s.num, nombre: s.nombre, nivel: s.nivel } });
   }
-  if (r0 === "pin" && M === "POST") {   // primera vez: el usuario crea su contraseña
+  if (r0 === "admin-login" && M === "POST") {
     const { num, pin } = await body();
     const n = limpio(num, 20), p = limpio(pin, 100);
     const u = await getUsuario(n);
-    if (!u || !u.activo) return err("Número de control no registrado.", 401);
-    if (u.pin) return err("Este usuario ya tiene contraseña.", 409);
-    if (p.length < 4) return err("La contraseña debe tener al menos 4 caracteres.");
-    u.pin = await hashPin(p);
-    await st("usuarios").setJSON(n, u);
-    const s = await abrirSesion(u, context);
+    if (!u || !u.activo || u.nivel !== "admin") return err("Ese número no es administrador.", 401);
+    if (!u.pin) {   // admin recién creado (ADMIN_NUM): la primera contraseña que capture queda
+      if (p.length < 4) return json({ crearPin: true, nombre: u.nombre });
+      u.pin = await hashPin(p);
+      await st("usuarios").setJSON(n, u);
+    } else if (!(await checkPin(p, u.pin))) return err("Contraseña incorrecta.", 401);
+    const s = await abrirSesion(u, context, true);
     return json({ ok: true, yo: { num: s.num, nombre: s.nombre, nivel: s.nivel } });
   }
   if (r0 === "logout") { context.cookies.delete({ name: COOKIE, path: "/" }); return json({ ok: true }); }
@@ -90,17 +90,18 @@ export default async (req: Request, context: Context) => {
   /* ---------- con sesión ---------- */
   const s = await verificar(context.cookies.get(COOKIE), await secreto("sesion"));
   if (!s) return err("Sesión vencida. Vuelve a entrar.", 401);
-  const admin = s.nivel === "admin";
+  const admin = esAdmin(s);
 
   if (r0 === "yo") {
     const cfg = (await st("config").get("procNiveles", { type: "json" })) || {};
-    return json({ yo: { num: s.num, nombre: s.nombre, nivel: s.nivel, rango: rango(s.nivel) }, procNiveles: cfg });
+    return json({ yo: { num: s.num, nombre: s.nombre, nivel: s.nivel, rango: rango(s.nivel), adm: admin }, procNiveles: cfg });
   }
 
   if (r0 === "cambiar-pin" && M === "POST") {
     const { actual, nueva } = await body();
     const u = await getUsuario(s.num);
-    if (!u || !(await checkPin(limpio(actual, 100), u.pin))) return err("La contraseña actual no coincide.", 401);
+    if (!u || u.nivel !== "admin") return err("Solo el administrador usa contraseña.", 403);
+    if (!(await checkPin(limpio(actual, 100), u.pin))) return err("La contraseña actual no coincide.", 401);
     if (limpio(nueva, 100).length < 4) return err("La nueva contraseña debe tener al menos 4 caracteres.");
     u.pin = await hashPin(limpio(nueva, 100));
     await st("usuarios").setJSON(u.num, u);

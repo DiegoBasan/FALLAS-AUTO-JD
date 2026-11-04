@@ -1,33 +1,94 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>JD Fallas</title><meta name="theme-color" content="#f2f2f3">
-<script src="shared/theme.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared/ui.css">
+<title>JD Fallas</title>
+<meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="JD Fallas">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png">
+<script src="/shared/theme.js"></script>
+<script src="/shared/app.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/ui.css">
 <style>
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
-main{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 16px 40px}
-h1{font-size:28px;margin:0 0 4px;letter-spacing:-.5px} p.s{color:var(--ink2);margin:0 0 22px}
-.big{display:flex;align-items:center;gap:14px;padding:18px;border-radius:22px;background:var(--surface);border:1px solid var(--line);color:inherit;text-decoration:none;margin-bottom:10px}
-.big i{width:14px;height:14px;border-radius:50%;flex:0 0 auto} .big b{font-size:17px;display:block} .big small{color:var(--ink2)}
-.login{margin-top:22px;padding:16px;border:1.5px dashed var(--line);border-radius:20px;color:var(--ink2);font-size:14px}
-.top{display:flex;justify-content:space-between;align-items:center}
-</style></head><body><main>
-<div class="top"><div><h1>JD Fallas</h1><p class="s">Fallas y procesos de las líneas de cámaras</p></div><button class="ibtn" data-theme-toggle></button></div>
-<a class="big" href="buscador-kasalis/"><i style="background:#FF7F66"></i><span><b>Fallas Kasalis</b><small>Pixid 500: códigos, flujos y guías del programa</small></span></a>
-<a class="big" href="fallas-linea/"><i style="background:#2F6BFF"></i><span><b>Fallas de línea</b><small>Gecko, Moose, Scorpion y hornos</small></span></a>
-<a class="big" href="/docs/"><i style="background:#8A8A90"></i><span><b>Documentos</b><small>Manual, códigos de error, parámetros, layouts</small></span></a>
-<a class="big" id="adm" href="/admin/" hidden><i style="background:#141416"></i><span><b>Panel de administración</b><small>Aportaciones, actividad, búsquedas y usuarios</small></span></a>
-<div class="login" id="yoBox">Cargando tu cuenta…</div>
-<form name="aportacion" method="POST" data-netlify="true" netlify-honeypot="bot" hidden>
-  <input name="bot"><input name="quien"><input name="falla"><input name="paso"><input name="tipo"><textarea name="texto"></textarea>
-</form>
+body{font-family:Inter,system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 16px var(--pad-b)}
+.top{position:static;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hola{font-size:14px;color:var(--ink2);font-weight:500}
+h1{font-size:30px;margin:0;letter-spacing:-.6px;line-height:1.1}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:999px;padding:0 6px 0 16px;border:1px solid var(--line);height:52px;margin:18px 0 6px}
+.search input{flex:1;border:0;outline:0;background:transparent;font-size:16px;height:50px;min-width:0}
+.search button{border:0;height:40px;padding:0 16px;border-radius:99px;background:var(--invert);color:var(--invert-ink);font-weight:700;cursor:pointer}
+.hint{font-size:12.5px;color:var(--ink3);margin:0 6px 4px}
+h3.lb{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin:24px 4px 10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{position:relative;display:flex;flex-direction:column;gap:10px;min-height:150px;padding:16px;border-radius:24px;background:var(--surface);border:1px solid var(--line);overflow:hidden;transition:transform .15s}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;color:#fff;background:var(--c);box-shadow:0 8px 18px color-mix(in srgb,var(--c) 35%,transparent)}
+.tile .ic svg{width:25px;height:25px}
+.tile b{font-size:17px;letter-spacing:-.2px;line-height:1.2}
+.tile small{font-size:12.5px;color:var(--ink2);line-height:1.35;margin-top:-4px}
+.tile.wide{grid-column:1/-1;flex-direction:row;align-items:center;min-height:0}
+.tile.wide .t{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.tile.wide small{margin-top:0}
+.tile.big{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 14%,var(--surface)),var(--surface) 70%)}
+.tile.big .t{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.tile.big .ic{width:56px;height:56px;border-radius:18px}
+.go{color:var(--ink3);font-size:20px}
+.maq{display:flex;gap:8px;flex-wrap:wrap}
+.maq a{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-weight:600}
+.maq a i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.yo{margin-top:24px;padding:14px 16px;border-radius:20px;border:1.5px dashed var(--line);color:var(--ink2);font-size:13.5px;line-height:1.5}
+@media (min-width:700px){ .tiles{grid-template-columns:repeat(4,1fr)} .tile.big{grid-column:span 2} }
+</style></head><body>
+<main>
+  <div class="top"><div><div class="hola" id="hola">JD Fallas</div><h1>¿Qué está fallando?</h1></div><button class="round" data-theme-toggle></button></div>
+  <form class="search" id="f" role="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink3);flex:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Código o palabra: 102, pogo…">
+    <button>Buscar</button>
+  </form>
+  <div class="hint">Un número busca el código en la Kasalis; una palabra busca en todo.</div>
+
+  <h3 class="lb">Secciones</h3>
+  <div class="tiles">
+    <a class="tile big" href="/buscador-kasalis/" style="--c:#FF7F66"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg></span><span class="t"><b>Fallas Kasalis</b><small>Pixid 500: códigos, flujos y guías del programa</small></span><span class="go">›</span></a>
+    <a class="tile big" href="/fallas-linea/" style="--c:#2F6BFF"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="5" height="6" rx="1.2"/><rect x="9.5" y="9" width="5" height="6" rx="1.2"/><rect x="16.5" y="9" width="5" height="6" rx="1.2"/><path d="M2 19h20"/></svg></span><span class="t"><b>Fallas de línea</b><small>Gecko, Moose, Scorpion y hornos</small></span><span class="go">›</span></a>
+    <a class="tile" href="/docs/" style="--c:#8A8A90"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><b>Documentos</b><small>Manual, códigos de error, parámetros</small></a>
+    <a class="tile" href="/buscador-kasalis/#guias" style="--c:#12A594"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg></span><b>Guías Kasalis</b><small>Paso a paso del programa</small></a>
+    <a class="tile" href="/fallas-linea/#procesos" style="--c:#F08C00"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/><circle cx="4.5" cy="18" r="1.5"/></svg></span><b>Procesos de línea</b><small>DELO, hornos, recetas, fixturas</small></a>
+    <a class="tile" id="adm" href="/admin/" style="--c:#141416" hidden><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><b>Panel admin</b><small>Aportaciones, actividad y usuarios</small></a>
+  </div>
+
+  <h3 class="lb">Ir directo a una línea</h3>
+  <div class="maq">
+    <a href="/buscador-kasalis/" style="--c:#FF7F66"><i></i>Kasalis</a>
+    <a href="/fallas-linea/?f=gecko" style="--c:#8B5CF6"><i></i>Gecko</a>
+    <a href="/fallas-linea/?f=moose" style="--c:#F08C00"><i></i>Moose</a>
+    <a href="/fallas-linea/?f=scorpion" style="--c:#2F6BFF"><i></i>Scorpion</a>
+    <a href="/fallas-linea/?f=horno" style="--c:#8A8A90"><i></i>Hornos</a>
+    <a href="/fallas-linea/?f=general" style="--c:#5E6B78"><i></i>General</a>
+  </div>
+
+  <div class="yo" id="yoBox">¿Ves algo que falte o no cuadre en una falla? Usa <b>＋ Aportar</b> ahí mismo.</div>
+  <form name="aportacion" method="POST" data-netlify="true" netlify-honeypot="bot" hidden>
+    <input name="bot"><input name="quien"><input name="falla"><input name="paso"><input name="tipo"><textarea name="texto"></textarea>
+  </form>
 </main>
 <script type="module">
 import {yo, track} from '/shared/cuenta.js';
 yo().then(({yo:u})=>{
-  document.getElementById('yoBox').innerHTML = `Hola <b>${u.nombre}</b> · No. ${u.num}. ¿Ves algo que falte o no cuadre en una falla? Usa <b>＋ Aportar</b> ahí mismo. <a href="/buscador-kasalis/#info">Mi cuenta y mis aportaciones</a>`;
+  document.getElementById('hola').textContent = `Hola, ${u.nombre.split(' ')[0]}`;
   if(u.nivel==='admin') document.getElementById('adm').hidden = false;
 }).catch(()=>{});
+document.getElementById('f').onsubmit = e => {
+  e.preventDefault();
+  const q = document.getElementById('q').value.trim(); if(!q) return;
+  location.href = /^-?\d+$/.test(q) ? `/buscador-kasalis/#${encodeURIComponent(q)}` : `/buscador-kasalis/#s/${encodeURIComponent(q)}`;
+};
 track('vista', {ruta:'inicio', titulo:'Inicio'});
 </script></body></html>

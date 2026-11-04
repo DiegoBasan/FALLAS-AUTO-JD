@@ -1,14 +1,24 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Admin · JD Fallas</title><meta name="theme-color" content="#f2f2f3">
+<title>Admin · JD Fallas</title>
+<meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="JD Fallas">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png">
 <script src="/shared/theme.js"></script>
+<script src="/shared/app.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/shared/ui.css">
 <style>
 :root{--bar:#2F6BFF}
 [data-theme=dark]{--bar:#6E9BFF}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
-main{max-width:1100px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px 110px}
+main{max-width:1100px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px var(--pad-b)}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .top h1{flex:1;margin:0;font-size:24px;letter-spacing:-.4px}
 .top a{color:inherit;font-weight:700;text-decoration:none;font-size:14px}
@@ -134,13 +144,13 @@ async function vUsuarios(){
   $('out').innerHTML = `<div class="card"><h3 style="margin-top:0">Dar de alta</h3><div class="alta">
       <input class="in" id="nNum" placeholder="Número de control" inputmode="numeric"><input class="in" id="nNom" placeholder="Nombre">
       <select id="nNiv">${Object.entries(NIV).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="btn dk" id="nOk">Agregar</button></div>
-      <div class="faint" style="font-size:12.5px;margin-top:8px">La primera vez que entre, la persona crea su propia contraseña.</div></div>
-    <div class="card tbl"><table><tr><th>Nombre</th><th>No.</th><th>Nivel</th><th>Contraseña</th><th>Activo</th><th></th></tr>
+      <div class="faint" style="font-size:12.5px;margin-top:8px">Entran solo con su número de control. Solo el panel admin pide contraseña.</div></div>
+    <div class="card tbl"><table><tr><th>Nombre</th><th>No.</th><th>Nivel</th><th>Contraseña panel</th><th>Activo</th><th></th></tr>
       ${usuarios.map(u=>`<tr data-u="${esc(u.num)}"><td><input class="in" value="${esc(u.nombre)}" data-campo="nombre" style="width:100%;min-width:120px"></td><td class="n">${esc(u.num)}</td>
         <td><select data-campo="nivel">${Object.entries(NIV).map(([k,v])=>`<option value="${k}" ${u.nivel===k?'selected':''}>${v}</option>`).join('')}</select></td>
-        <td>${u.tienePin?'Creada':'<span class="faint">Pendiente (primera vez)</span>'}</td>
+        <td>${u.nivel!=='admin'?'<span class="faint">No usa</span>':u.tienePin?'Creada':'<span class="faint">Pendiente (primera vez)</span>'}</td>
         <td><input type="checkbox" data-campo="activo" ${u.activo?'checked':''}></td>
-        <td style="white-space:nowrap"><button class="btn" data-guardar>Guardar</button> ${u.tienePin?'<button class="btn" data-reset>Reiniciar contraseña</button>':''}</td></tr>`).join('')}</table></div>`;
+        <td style="white-space:nowrap"><button class="btn" data-guardar>Guardar</button> ${u.tienePin&&u.nivel==='admin'?'<button class="btn" data-reset>Reiniciar contraseña</button>':''}</td></tr>`).join('')}</table></div>`;
 }
 
 function vNiveles(cfg){

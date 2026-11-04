@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "JD Fallas",
+  "short_name": "JD Fallas",
+  "description": "Fallas y procesos de las líneas de cámaras: Kasalis Pixid 500, Gecko, Moose, Scorpion y hornos.",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f2",
+  "theme_color": "#f2f2f2",
+  "icons": [
+    {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Fallas Kasalis", "url": "/buscador-kasalis/", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Fallas de línea", "url": "/fallas-linea/", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Documentos", "url": "/docs/", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]}
+  ]
+}

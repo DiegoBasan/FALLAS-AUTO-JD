@@ -15,11 +15,23 @@ const esc = tx;
 const BASE = new URL('./', import.meta.url);
 const col = l => (MAQ[l]||MAQ.general).c;
 let filtro = 'todas'; try{ filtro = localStorage.getItem('jd_linea_filtro') || 'todas'; }catch(e){}
+{ const qf = new URLSearchParams(location.search).get('f'); if(qf && (qf==='todas' || MAQ[qf])){ filtro = qf; try{ localStorage.setItem('jd_linea_filtro', qf); }catch(e){} history.replaceState(null, '', location.pathname + location.hash); } }
 const pasa = x => filtro==='todas' || x.linea===filtro || (x.lineas||[]).includes(filtro);
 
 /* ---------- piezas ---------- */
 const tags = x => [x.linea, ...(x.lineas||[])].filter((v,i,a)=>v && a.indexOf(v)===i).map(l=>`<span class="tag" style="--m:${col(l)}">${esc(MAQ[l]?.n||l)}</span>`).join('');
-function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div>${tags(f)}</div><b>${esc(plain(f.titulo))}</b><span>${esc(plain(f.corto))}</span></div>`; }
+/* icono según el tipo de estación; el color es el de la línea */
+const IC = [
+  [/horno|asselec/i, '<path d="M12 3c2.5 3 5 5.3 5 9a5 5 0 0 1-10 0c0-1.9.8-3.3 2-4.6.3 1.6 1.2 2.6 2.4 2.6C12.6 8 11 6 12 3z"/><path d="M5 21h14"/>'],
+  [/leak|desecante|plasma|lavado/i, '<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/>'],
+  [/eol|sfr|fvt|robot/i, '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="m8 11 2.5 2.5L16 8M9 21h6"/>'],
+  [/visi[oó]n|acura|dogbone|cuarto/i, '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'],
+  [/mes|software|etiqueta|serial/i, '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'],
+  [/router|pcb/i, '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>'],
+  [/atornill|tornillo|bracket|assy|elk|celda|lens adapter/i, '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>'],
+];
+const icono = f => { const t = f.titulo + ' ' + (f.maquina||''); const m = IC.find(([re])=>re.test(t)); return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${m ? m[1] : IC[IC.length-1][1]}</svg>`; };
+function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div class="top-r"><div class="ic">${icono(f)}</div><div>${tags(f)}</div></div><b>${esc(plain(f.titulo))}</b><span>${esc(plain(f.corto))}</span></div>`; }
 function procRow(id){ const p = PROCESOS[id]; if(!visible(id)) return ''; return `<div class="row" data-go="p/${id}" style="--m:${col(p.linea)}"><b style="font-size:12px"><span class="tag" style="--m:${col(p.linea)}">${esc(MAQ[p.linea]?.n||'')}</span></b><span>${esc(p.titulo)}<small>${esc(p.maquina||'')} · ${p.pasos.length ? p.pasos.length+' pasos' : 'en construcción'}</small></span><span class="faint">›</span></div>`; }
 function renderFilters(){
   const keys = ['todas', ...Object.keys(MAQ)];
@@ -61,11 +73,6 @@ function procesosTab(){
   const order = Object.keys(MAQ).filter(k=>groups[k]);
   return order.length ? order.map(l=>`<h3 class="lb">${esc(MAQ[l].n)}</h3><div class="list">${groups[l].map(procRow).join('')}</div>`).join('') : '<div class="empty">Sin procesos para esta línea todavía.</div>';
 }
-function infoTab(){
-  return `${cuentaHTML()}<div class="link" onclick="location.href='/docs/'"><span>📄 Documentos: manual, códigos de error, layouts</span><span class="faint">›</span></div><h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Abre esta página en <b>Safari</b> → Compartir → <b>Agregar a pantalla de inicio</b>.</div>
-    <h3 class="lb">Colores</h3><div class="list">${Object.entries(MAQ).map(([k,m])=>`<div class="row" ${k==='kasalis'?`onclick="location.href='${m.href}'"`:`data-f2="${k}"`}><b><span class="tag" style="--m:${m.c}">${esc(m.n)}</span></b><span>${esc(m.d||'')}</span><span class="faint">${k==='kasalis'?'↗':''}</span></div>`).join('')}</div>
-    <h3 class="lb">Qué hay aquí</h3><div class="install"><b>Fallas</b>: cada falla de las estaciones de línea y hornos con su flujo (primero checar esto, luego esto…).<br><b>Procesos</b>: guías paso a paso (cambio de DELO, hornos, recetas, fixturas…).<br>Las fallas de la Kasalis están en su propia app: <a href="${MAQ.kasalis.href}"><b>Fallas Kasalis ↗</b></a></div>`;
-}
 function searchView(q){
   const ql = q.toLowerCase();
   const fs = FALLAS.filter(f=>JSON.stringify(f).toLowerCase().includes(ql)), ps = Object.keys(PROCESOS).filter(id=>JSON.stringify(PROCESOS[id]).toLowerCase().includes(ql));
@@ -81,7 +88,7 @@ function route(){
   let html, title = 'Fallas de línea', tab = 'fallas', sub = false;
   if(!raw) html = homeView();
   else if(raw==='procesos'){ html = procesosTab(); title = 'Procesos'; tab = 'procesos'; }
-  else if(raw==='info'){ html = infoTab(); title = 'Más'; tab = 'info'; }
+  else if(raw==='info'){ location.replace('/cuenta/'); return; }
   else if(raw.startsWith('f/')){ const f = FALLAS.find(x=>x.id===raw.slice(2)); html = fallaView(raw.slice(2)); title = f?f.titulo:title; sub = true; }
   else if(raw.startsWith('p/')){ const p = PROCESOS[raw.slice(2)]; html = procesoView(raw.slice(2)); title = p?p.titulo:'Proceso'; sub = true; tab = 'procesos'; }
   else if(raw.startsWith('s/')){ const q = raw.slice(2); html = searchView(q); title = 'Buscar'; tab = ''; sub = true; if(document.activeElement!==$('q')) $('q').value = q; }
@@ -95,11 +102,11 @@ function route(){
   const gp = $('out').querySelector('.gflow-p');
   if(gp){ const p = PROCESOS[gp.dataset.pid]; ap = {el: gp, ref:'linea-p:'+gp.dataset.pid, app:'linea', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
   if(ap) mountAportes(ap.el, ap); else ocultarFab();
-  if(raw==='info') montarCuenta($('out'));
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'linea'}), 1500); }
   else track('vista', {ruta: 'linea/' + (raw || 'inicio'), titulo: title}); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
-  document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
+  document.querySelectorAll('#seg a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
+  $('seg').hidden = sub;
   $('clr').style.display = $('q').value ? 'block' : 'none';
   if(!raw.startsWith('s/')) window.scrollTo(0,0);
 }
@@ -118,7 +125,7 @@ $('q').addEventListener('input', ()=>{ clearTimeout(tmr); const v = $('q').value
   tmr = setTimeout(()=>{ if(!v){ location.replace('#'); return; } const h = '#s/'+encodeURIComponent(v); if(location.hash.startsWith('#s/')) location.replace(h); else go(h.slice(1)); }, 250); });
 $('q').addEventListener('keydown', e=>{ if(e.key==='Enter') $('q').blur(); });
 $('clr').onclick = ()=>{ $('q').value = ''; location.hash = ''; };
-document.querySelectorAll('.tabs a').forEach(a=>a.addEventListener('click', ()=>{ $('q').value = ''; depth = 0; }));
+document.querySelectorAll('#seg a').forEach(a=>a.addEventListener('click', ()=>{ $('q').value = ''; depth = 0; }));
 addEventListener('hashchange', route);
 renderFilters();
 yo().then(r=>{ SES = {nivel: r.yo.nivel, procNiveles: r.procNiveles || {}}; }).catch(()=>{}).finally(route);

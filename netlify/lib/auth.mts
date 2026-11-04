@@ -18,7 +18,9 @@ export const unb64u = (s: string) => {
 async function hmacKey(secret: string) {
   return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
-export type Sesion = { num: string; nombre: string; nivel: Nivel; exp: number };
+/* adm: true solo cuando un admin confirmó su contraseña (el resto entra solo con su número). */
+export type Sesion = { num: string; nombre: string; nivel: Nivel; exp: number; adm?: boolean };
+export const esAdmin = (s: Sesion | null) => !!s && s.nivel === "admin" && s.adm === true;
 
 export async function firmar(s: Sesion, secret: string) {
   const body = b64u(enc.encode(JSON.stringify(s)));

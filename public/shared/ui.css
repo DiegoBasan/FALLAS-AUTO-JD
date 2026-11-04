@@ -28,3 +28,42 @@ button,input,select{font:inherit;color:inherit}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 mark{background:rgba(110,92,230,.22);color:inherit;border-radius:4px;padding:0 2px}
 :root[data-theme="dark"] mark{background:rgba(169,156,255,.25)}
+
+/* ===== App instalada (iPhone / Android) ===== */
+:root{
+  --glass:rgba(255,255,255,.62); --glass-line:rgba(255,255,255,.75); --glass-shadow:0 14px 40px rgba(20,20,40,.16), 0 2px 6px rgba(20,20,40,.06);
+  /* menú flotante: en celular va arriba del aviso "Powered by Netlify" (plan gratis, abajo a la derecha) */
+  --nav-b:66px; --nav-h:62px;
+  --fab-b:calc(var(--nav-b) + var(--nav-h) + 12px);
+  --pad-b:calc(var(--nav-b) + var(--nav-h) + 28px);
+}
+:root[data-theme="dark"]{ --glass:rgba(38,38,40,.58); --glass-line:rgba(255,255,255,.12); --glass-shadow:0 14px 40px rgba(0,0,0,.5); }
+@media (min-width:900px){ :root{ --nav-b:18px; } }
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+body{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,.gnav,.seg,[data-go],.mode,.row,.link,.tile{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+@view-transition{navigation:auto}
+
+.gnav{position:fixed;left:50%;bottom:var(--nav-b);transform:translateX(-50%);z-index:40;display:flex;gap:2px;padding:5px;border-radius:999px;
+  background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-line);box-shadow:var(--glass-shadow);view-transition-name:gnav}
+.gnav a{width:64px;height:calc(var(--nav-h) - 10px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:999px;
+  font-size:10.5px;font-weight:600;color:var(--ink2);transition:background .2s,color .2s,transform .15s}
+.gnav a svg{width:23px;height:23px}
+.gnav a:active{transform:scale(.92)}
+.gnav a.on{background:var(--surface);color:var(--c);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.gnav a.on span{color:var(--ink)}
+:root[data-theme="dark"] .gnav a.on{background:rgba(255,255,255,.1)}
+@media (min-width:900px){ .gnav a{width:auto;padding:0 18px;flex-direction:row;gap:8px;font-size:13.5px} .gnav a svg{width:20px;height:20px} }
+@media (max-width:359px){ .gnav a{width:56px} }
+
+
+/* control segmentado (sub-secciones dentro de Kasalis / Línea) */
+.seg{max-width:760px;margin:10px auto 0;display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--surface2)}
+.seg a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:38px;border-radius:999px;font-weight:600;font-size:14px;color:var(--ink2);transition:background .2s,color .2s}
+.seg a svg{width:17px;height:17px}
+.seg a.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+:root[data-theme="dark"] .seg a.on{background:var(--surface3)}
+@media (min-width:1000px){ .seg{max-width:1180px} }
+
+[hidden]{display:none!important}
