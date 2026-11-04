@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Admin · JD Fallas</title>
 <meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -71,9 +71,10 @@ select,input.in{border:1px solid var(--line);border-radius:10px;padding:7px 9px;
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:700;z-index:50}
 .empty{padding:16px;color:var(--ink2)}
 </style></head><body><main>
-<div class="top"><h1>Panel de administración</h1><a href="/">Inicio ›</a><button class="ibtn" data-theme-toggle></button></div>
+<div class="top"><h1>Panel de administración</h1><button class="round" data-theme-toggle></button></div>
 <nav class="tb" id="tabs">
   <button data-t="ap" class="on">Aportaciones <span class="ct" id="ctPend" hidden></span></button>
+  <button data-t="ins">Instrucciones <span class="ct" id="ctIns" hidden></span></button>
   <button data-t="act">Actividad</button>
   <button data-t="us">Usuarios</button>
   <button data-t="niv">Accesos por nivel</button>
@@ -111,6 +112,25 @@ async function vAportes(){
         ${a.estado!=='rechazada'?`<button class="btn no" data-est="rechazada" data-id="${esc(a.id)}">✕ Rechazar</button>`:''}
         ${a.estado!=='pendiente'?`<button class="btn" data-est="pendiente" data-id="${esc(a.id)}">Regresar a pendiente</button>`:''}
         <button class="btn" data-borrar="${esc(a.id)}">Borrar</button></div></div>`; }).join('') || '<div class="empty">No hay aportaciones aquí.</div>'}`;
+}
+
+let INS = [], filtroI = 'pendiente';
+async function contarIns(){ try{ INS = (await api('instrucciones')).instrucciones; const n = INS.filter(d=>d.estado==='pendiente').length; $('ctIns').hidden = !n; $('ctIns').textContent = n; }catch{} }
+async function vInstr(){
+  await contarIns();
+  const lst = filtroI==='todas' ? INS : INS.filter(d=>d.estado===filtroI);
+  const cnt = e => INS.filter(d=>e==='todas'||d.estado===e).length;
+  $('out').innerHTML = `<div class="flt">${['pendiente','aprobada','rechazada','todas'].map(e=>`<button data-fi="${e}" class="${filtroI===e?'on':''}">${{pendiente:'En revisión',aprobada:'Aprobadas',rechazada:'No aprobadas',todas:'Todas'}[e]} (${cnt(e)})</button>`).join('')}</div>
+    ${lst.map(d=>`<div class="ap ${d.estado}" style="display:grid;grid-template-columns:${d.portada?'84px ':''}1fr;gap:12px;align-items:start">
+      ${d.portada?`<img src="/api/foto/${esc(d.portada)}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:12px;margin:0">`:''}
+      <div><div class="t">📘 ${d.app==='linea'?'Línea':'Kasalis'} · <a href="/instrucciones/#i/${esc(d.id)}">${esc(d.titulo)}</a></div>
+      <div class="m"><b>${esc(d.nombre)}</b> (No. ${esc(d.num)}) · ${fecha(d.actualizado||d.fecha)} · ${d.pasos} pasos · ${d.fotos} fotos</div>
+      ${d.desc?`<div class="x">${esc(d.desc)}</div>`:''}
+      <div class="rev"><input placeholder="Nota (opcional; la ve el autor)" value="${esc(d.nota||'')}" data-inota="${esc(d.id)}">
+        ${d.estado!=='aprobada'?`<button class="btn ok" data-iest="aprobada" data-id="${esc(d.id)}">✓ Aprobar</button>`:''}
+        ${d.estado!=='rechazada'?`<button class="btn no" data-iest="rechazada" data-id="${esc(d.id)}">✕ No aprobar</button>`:''}
+        ${d.estado!=='pendiente'?`<button class="btn" data-iest="pendiente" data-id="${esc(d.id)}">Regresar a revisión</button>`:''}
+        <button class="btn" data-iborrar="${esc(d.id)}">Borrar</button></div></div></div>`).join('') || '<div class="empty">No hay instrucciones aquí.</div>'}`;
 }
 
 async function vActividad(dias=7){
@@ -173,12 +193,18 @@ async function vNotif(){
 }
 
 async function pintar(){ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.t===tab));
-  try{ if(tab==='ap') await vAportes(); else if(tab==='act') await vActividad(); else if(tab==='us') await vUsuarios(); else if(tab==='niv') vNiveles((await api('config')).procNiveles); else await vNotif(); }
+  try{ if(tab==='ap') await vAportes(); else if(tab==='ins') await vInstr(); else if(tab==='act') await vActividad(); else if(tab==='us') await vUsuarios(); else if(tab==='niv') vNiveles((await api('config')).procNiveles); else await vNotif(); }
   catch(e){ $('out').innerHTML = `<div class="empty">${esc(e.message)}</div>`; } }
 $('tabs').onclick = e => { const b = e.target.closest('[data-t]'); if(b){ tab = b.dataset.t; pintar(); } };
 $('out').addEventListener('click', async e => {
   const t = e.target;
   if(t.closest('[data-f]')){ filtro = t.closest('[data-f]').dataset.f; return vAportes(); }
+  if(t.closest('[data-fi]')){ filtroI = t.closest('[data-fi]').dataset.fi; return vInstr(); }
+  const ie = t.closest('[data-iest]');
+  if(ie){ const nota = $('out').querySelector(`[data-inota="${CSS.escape(ie.dataset.id)}"]`)?.value || '';
+    try{ await api('instrucciones/estado', {method:'POST', body: JSON.stringify({id: ie.dataset.id, estado: ie.dataset.iest, nota})}); toast(ie.dataset.iest==='aprobada'?'Aprobada':ie.dataset.iest==='rechazada'?'No aprobada':'Regresada a revisión'); vInstr(); }catch(err){ alert(err.message); } return; }
+  const ib = t.closest('[data-iborrar]');
+  if(ib && confirm('¿Borrar esta instrucción y sus fotos para siempre?')){ await api('instrucciones/borrar', {method:'POST', body: JSON.stringify({id: ib.dataset.iborrar})}); vInstr(); return; }
   if(t.closest('[data-dias]')) return vActividad(+t.closest('[data-dias]').dataset.dias);
   if(t.matches('.ap img')){ const d = document.createElement('div'); d.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center'; d.innerHTML=`<img src="${t.src}" style="max-width:100%;max-height:100%">`; d.onclick=()=>d.remove(); document.body.appendChild(d); return; }
   const est = t.closest('[data-est]');
@@ -193,5 +219,5 @@ $('out').addEventListener('click', async e => {
   if(row && t.matches('[data-reset]') && confirm('¿Reiniciar su contraseña? La próxima vez que entre creará una nueva.')){ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, resetPin: true})}); toast('Contraseña reiniciada'); vUsuarios(); return; }
   if(t.id==='nivOk'){ const cfg = {}; $('out').querySelectorAll('[data-proc]').forEach(s=>cfg[s.dataset.proc] = s.value); await api('config', {method:'POST', body: JSON.stringify({procNiveles: cfg})}); toast('Accesos guardados'); }
 });
-pintar();
+pintar(); contarIns();
 </script></body></html>

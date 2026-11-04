@@ -5,6 +5,7 @@
      fotos        <id>  → imagen (jpeg)
      actividad    <YYYY-MM-DD>/<num> → {num, nombre, eventos:[{t, tipo, ruta?, titulo?, q?, n?}]}
      config       procNiveles → {procId: nivel}
+     instrucciones <id> → {id, app, titulo, desc, bloques:[{t:'paso'|'nota'|'foto', txt?, foto?, cap?}], num, nombre, fecha, actualizado, estado, nota?, revisado?}
 */
 import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
@@ -165,6 +166,86 @@ export default async (req: Request, context: Context) => {
       if (!a) return err("No existe.", 404);
       if (!admin && !(a.num === s.num && a.estado === "pendiente")) return err("No puedes borrar esta aportación.", 403);
       await store.delete(a.id); if (a.foto) await st("fotos").delete(a.foto);
+      return json({ ok: true });
+    }
+  }
+
+  /* subir una foto suelta (la usan las instrucciones; se manda una por una para no hacer envíos enormes) */
+  if (r0 === "foto" && !r1 && M === "POST") {
+    const { foto } = await body();
+    if (!(typeof foto === "string" && foto.startsWith("data:image/"))) return err("Foto inválida.");
+    const bytes = Uint8Array.from(atob(foto.split(",")[1] || ""), c => c.charCodeAt(0));
+    if (bytes.length > 3_500_000) return err("La foto es muy pesada (máx. 3.5 MB).");
+    const fid = id();
+    await st("fotos").set(fid, new Blob([bytes], { type: foto.slice(5, foto.indexOf(";")) || "image/jpeg" }), { metadata: { num: s.num } });
+    return json({ ok: true, id: fid }, 201);
+  }
+
+  /* instrucciones: documentos paso a paso que hace la gente (pasan por revisión como las aportaciones) */
+  if (r0 === "instrucciones") {
+    const store = st("instrucciones");
+    const ve = (d: any) => admin || d.estado === "aprobada" || d.num === s.num;
+    const resumen = (d: any) => ({ id: d.id, app: d.app, titulo: d.titulo, desc: d.desc, num: d.num, nombre: d.nombre, fecha: d.fecha, actualizado: d.actualizado,
+      estado: d.estado, nota: d.nota, pasos: d.bloques.filter((b: any) => b.t === "paso").length, fotos: d.bloques.filter((b: any) => b.t === "foto").length,
+      portada: d.bloques.find((b: any) => b.t === "foto" && b.foto)?.foto || null });
+    if (M === "GET" && !r1) {
+      const app = url.searchParams.get("app");
+      const { blobs } = await store.list();
+      const ds = ((await Promise.all(blobs.map(b => store.get(b.key, { type: "json" })))).filter(Boolean) as any[])
+        .filter(d => ve(d) && (!app || d.app === app));
+      ds.sort((a, b) => (b.actualizado || b.fecha).localeCompare(a.actualizado || a.fecha));
+      return json({ instrucciones: ds.map(resumen) });
+    }
+    if (M === "GET" && r1) {
+      const d = (await store.get(r1, { type: "json" })) as any;
+      if (!d || !ve(d)) return err("No existe o no tienes acceso.", 404);
+      return json({ instruccion: d, puedeEditar: admin || d.num === s.num });
+    }
+    if (M === "POST" && !r1) {
+      const d = await body();
+      const app = ["kasalis", "linea"].includes(d.app) ? d.app : "kasalis";
+      const titulo = limpio(d.titulo, 160);
+      if (!titulo) return err("Ponle un título a la instrucción.");
+      const bloques = (Array.isArray(d.bloques) ? d.bloques : []).slice(0, 200).map((b: any) => {
+        const t = ["paso", "nota", "foto"].includes(b?.t) ? b.t : "paso";
+        return t === "foto" ? { t, foto: limpio(b.foto, 60).replace(/[^\w-]/g, ""), cap: limpio(b.cap, 300) } : { t, txt: limpio(b.txt, 4000) };
+      }).filter((b: any) => (b.t === "foto" ? b.foto : b.txt));
+      if (!bloques.length) return err("Agrega al menos un paso, nota o foto.");
+      const ahora = new Date().toISOString();
+      let doc: any;
+      if (d.id) {
+        doc = (await store.get(limpio(d.id, 60), { type: "json" })) as any;
+        if (!doc) return err("No existe.", 404);
+        if (!admin && doc.num !== s.num) return err("Solo quien la hizo o el administrador pueden editarla.", 403);
+        Object.assign(doc, { app, titulo, desc: limpio(d.desc, 1000), bloques, actualizado: ahora, editadoPor: s.nombre });
+        if (!admin && doc.estado !== "pendiente") doc.estado = "pendiente";   // cambios del autor se vuelven a revisar
+      } else {
+        doc = { id: id(), app, titulo, desc: limpio(d.desc, 1000), bloques, num: s.num, nombre: s.nombre, fecha: ahora, actualizado: ahora, estado: admin ? "aprobada" : "pendiente" };
+        context.waitUntil(notificar({ tipo: "instrucción", nombre: s.nombre, titulo: `Instrucción nueva: ${titulo}`, texto: `${bloques.length} bloques` }, url.origin));
+      }
+      await store.setJSON(doc.id, doc);
+      return json({ ok: true, instruccion: doc });
+    }
+    if (M === "POST" && r1 === "estado") {
+      if (!admin) return err("Solo el administrador.", 403);
+      const { id: did, estado, nota } = await body();
+      if (!["pendiente", "aprobada", "rechazada"].includes(estado)) return err("Estado inválido.");
+      const doc = (await store.get(String(did), { type: "json" })) as any;
+      if (!doc) return err("No existe.", 404);
+      doc.estado = estado; doc.nota = limpio(nota, 1000); doc.revisado = { por: s.nombre, fecha: new Date().toISOString() };
+      await store.setJSON(doc.id, doc);
+      return json({ ok: true });
+    }
+    if (M === "POST" && r1 === "borrar") {
+      const { id: did } = await body();
+      const doc = (await store.get(String(did), { type: "json" })) as any;
+      if (!doc) return err("No existe.", 404);
+      if (!admin && !(doc.num === s.num && doc.estado !== "aprobada")) return err("No puedes borrar esta instrucción.", 403);
+      await store.delete(doc.id);
+      // solo se borran las fotos que subió el mismo autor (no las que alguien más haya referenciado)
+      await Promise.all(doc.bloques.filter((b: any) => b.foto).map(async (b: any) => {
+        const m = await st("fotos").getMetadata(b.foto); if (m && (m.metadata as any)?.num === doc.num) await st("fotos").delete(b.foto);
+      }));
       return json({ ok: true });
     }
   }

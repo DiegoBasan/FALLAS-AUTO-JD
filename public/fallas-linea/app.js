@@ -2,7 +2,8 @@
    Mismo formato que Fallas Kasalis: flujo de resolución paso a paso + guías de procesos con fotos. */
 import {MAQ, FALLAS, PROCESOS} from './data/lineas.js';
 import {guideHTML} from '../shared/procs.js';
-import {yo, track, mountAportes, ocultarFab, cuentaHTML, montarCuenta, puedeVer} from '../shared/cuenta.js';
+import {yo, track, mountAportes, ocultarFab, fabInstruccion, puedeVer} from '../shared/cuenta.js';
+import {montarInstHome} from '../shared/instr.js';
 let SES = {nivel:'operador', procNiveles:{}};
 const visible = id => puedeVer(SES.procNiveles['linea:'+id] || 'operador', SES.nivel);
 import {tx, LEYENDA, plain} from '../shared/txt.js';
@@ -48,7 +49,8 @@ function homeView(){
     ? orden.map(l=>`<h3 class="lb grp" style="--m:${col(l)}"><i></i>${esc(MAQ[l]?.n||l)} <span class="faint">${fs.filter(f=>f.linea===l).length}</span></h3><div class="modes">${fs.filter(f=>f.linea===l).map(card).join('')}</div>`).join('')
     : `<div class="modes">${fs.map(card).join('')}</div>`;
   return `${sh('wrench','¿Qué está fallando?',1)}${fs.length?grupos:'<div class="empty">Sin fallas registradas para esta línea todavía.</div>'}
-    <hr class="sep">${sh('book','Procesos paso a paso',1)}${ps.length?`<div class="list">${ps.map(procRow).join('')}</div>`:'<div class="empty">Sin procesos para esta línea todavía.</div>'}`;
+    <hr class="sep">${sh('book','Procesos paso a paso',1)}${ps.length?`<div class="list">${ps.map(procRow).join('')}</div>`:'<div class="empty">Sin procesos para esta línea todavía.</div>'}
+    <hr class="sep"><div id="instHome"></div>`;
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
@@ -101,7 +103,7 @@ function route(){
   if(gf){ const f = FALLAS.find(x=>x.id===gf.dataset.fid); ap = {el: gf, ref:'linea:'+f.id, app:'linea', fallaId:f.id, titulo: plain(f.titulo), pasos: f.flujo.map(x=>plain(x.p))}; }
   const gp = $('out').querySelector('.gflow-p');
   if(gp){ const p = PROCESOS[gp.dataset.pid]; ap = {el: gp, ref:'linea-p:'+gp.dataset.pid, app:'linea', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
-  if(ap) mountAportes(ap.el, ap); else ocultarFab();
+  if(ap) mountAportes(ap.el, ap); else if(!raw){ fabInstruccion('linea'); montarInstHome($('instHome'), 'linea', sh('book','Instrucciones de la gente',1)); } else ocultarFab();
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'linea'}), 1500); }
   else track('vista', {ruta: 'linea/' + (raw || 'inicio'), titulo: title}); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';

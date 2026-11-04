@@ -185,7 +185,7 @@ export const FALLAS = [
   id:'delo', titulo:'DELO: cambio y manejo', corto:'Nivel, pot life, cambio de cartucho y pesos',
   codigos:['235','236'],
   flujo:[
-    {proc:'cambio-delo', p:'[[d:Cerrar aire y validar 0 PSI]]'},
+    {p:'[[d:Cerrar aire y validar 0 PSI]]'},
     {p:'[[d:Cambiar cartucho y asegurar conexiones]]'},
     {p:'[[d:Apretar el opresor]]', d:'[[d:Saltarse esto o el aire tiró DELO dos veces.]]'},
     {p:'[[d:Encender aire gradual y revisar fugas]]'},

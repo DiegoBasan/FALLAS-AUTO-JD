@@ -7,7 +7,8 @@ import {PROCS, procInline, guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA, plain} from '../shared/txt.js';
 import {flowFijo} from '../shared/flow.js';
 import {DEBUG} from './data/debug.js';
-import {yo, track, mountAportes, ocultarFab, puedeVer} from '../shared/cuenta.js';
+import {yo, track, mountAportes, ocultarFab, fabInstruccion, puedeVer} from '../shared/cuenta.js';
+import {montarInstHome} from '../shared/instr.js';
 import {explicaHTML, EX_CSS} from '../shared/explica.js';
 import {conImagenes} from './data/imagenes.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
@@ -166,6 +167,7 @@ function homeView(){
   h += `<hr class="sep">${sh('steps','Por estación',1)}`;
   ESTACIONES.forEach(e=>{ const fs = e[1].map(byId).filter(Boolean); if(fs.length) h += `<h3 class="lb">${dotEst(e)}${esc(e[0])}</h3><div class="modes">${fs.map(card).join('')}</div>`; });
   if(resto.length) h += `<h3 class="lb">${dotEst(estDe(''))}Otras</h3><div class="modes">${resto.map(card).join('')}</div>`;
+  h += `<hr class="sep"><div id="instHome"></div>`;
   h += `<hr class="sep">${sh('tip','Herramientas',1)}<div class="link" data-go="tools/linea"><span>🧮 Explicar una línea ARC / VIS / PRE</span><span class="faint">›</span></div>
     <div class="link" data-go="guias"><span>📘 Guías del programa (${Object.keys(PROCS).filter(visible).length})</span><span class="faint">›</span></div>
     <div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>${LEYENDA}`;
@@ -330,7 +332,7 @@ function route(){
   if(gf){ const f = FALLAS.find(x=>x.id===gf.dataset.fid); ap = {el: gf, ref:'kasalis:'+f.id, app:'kasalis', fallaId:f.id, titulo: plain(f.titulo), pasos: f.flujo.map(x=>plain(x.p))}; }
   const gp = $('out').querySelector('.gflow-p');
   if(gp){ const p = PROCS[gp.dataset.pid]; ap = {el: gp, ref:'kasalis-p:'+gp.dataset.pid, app:'kasalis', fallaId:'p:'+gp.dataset.pid, titulo: plain(p.titulo), pasos: p.pasos.map(x=>plain(x.texto))}; }
-  if(ap) mountAportes(ap.el, ap); else ocultarFab();
+  if(ap) mountAportes(ap.el, ap); else if(!raw){ fabInstruccion('kasalis'); montarInstHome($('instHome'), 'kasalis', sh('doc','Instrucciones de la gente',1)); } else ocultarFab();
   if(raw.startsWith('s/')){ clearTimeout(trk); const q = raw.slice(2), n = $('out').querySelectorAll('.row,.mode,.doc').length; trk = setTimeout(()=>track('busqueda', {q, n, ruta:'kasalis'}), 1500); }
   else track('vista', {ruta: 'kasalis/' + (raw || 'inicio'), titulo: title});
   $('back').style.display = sub ? '' : 'none';

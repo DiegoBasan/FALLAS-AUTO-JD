@@ -7,6 +7,10 @@
   var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   if(standalone) document.documentElement.classList.add('standalone');
   if(/iPhone|iPad|iPod/.test(navigator.userAgent)) document.documentElement.classList.add('ios');
+  // sin zoom (pellizcar o doble toque), como en una app nativa. iOS ignora user-scalable=no, por eso también aquí.
+  ['gesturestart','gesturechange','gestureend'].forEach(function(ev){ document.addEventListener(ev, function(e){ e.preventDefault(); }, {passive:false}); });
+  document.addEventListener('touchmove', function(e){ if(e.touches && e.touches.length > 1) e.preventDefault(); }, {passive:false});
+  // el doble toque ya no hace zoom por touch-action: manipulation (ui.css)
 
   if('serviceWorker' in navigator){
     addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){}); });
@@ -29,7 +33,8 @@
     ['cuenta','Cuenta','/cuenta/','var(--accent)']
   ];
   function activo(){
-    var p = location.pathname;
+    var p = location.pathname, fijo = document.documentElement.dataset.tab;
+    if(fijo) return fijo;
     if(p.indexOf('/buscador-kasalis')===0) return 'kasalis';
     if(p.indexOf('/fallas-linea')===0) return 'linea';
     if(p.indexOf('/docs')===0) return 'docs';
@@ -47,9 +52,11 @@
     // tocar la sección en la que ya estás = regresar a su inicio (como en las apps)
     nav.addEventListener('click', function(e){
       var a = e.target.closest('a'); if(!a) return;
-      if(a.classList.contains('on')){ e.preventDefault(); if(location.hash){ location.hash=''; } window.scrollTo({top:0, behavior:'smooth'}); }
+      if(a.classList.contains('on') && a.pathname === location.pathname){ e.preventDefault(); if(location.hash){ location.hash=''; } window.scrollTo({top:0, behavior:'smooth'}); }
     });
     document.body.appendChild(nav);
   }
+  // una página puede marcar otra pestaña después de cargar (p. ej. una instrucción de Línea)
+  window.JDNav = { set: function(k){ document.documentElement.dataset.tab = k; document.querySelectorAll('.gnav a').forEach(function(a){ var on = a.dataset.k === k; a.classList.toggle('on', on); if(on) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); } };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar); else montar();
 })();

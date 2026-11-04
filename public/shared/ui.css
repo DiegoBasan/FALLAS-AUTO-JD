@@ -12,6 +12,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+html{background:var(--bg)}
 body{background:var(--bg);color:var(--ink);font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
 a{color:inherit;text-decoration:none}
 button,input,select{font:inherit;color:inherit}
