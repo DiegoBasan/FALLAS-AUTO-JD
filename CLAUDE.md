@@ -18,6 +18,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
   - `fallas-linea/` Fallas de línea: `data/lineas.js` (`MAQ` colores, `FALLAS`, `PROCESOS`).
   - `shared/` — `txt.js` (marcas de fuente), `flow.js` (flujo fijo `flowFijo`), `procs.js` (guías inline), `explica.js` (explicador de líneas ARC/VIS/PRE del KsDispense), `kasalis.js` + `kasalis-codes.js` (códigos PLC/KSvision y HINTS), `theme.js`, `ui.css`.
   - PDFs/txt del manual y parámetros (referencias de `docs.js`).
+- `public/docs/` — página Documentos (manual, códigos de error, parámetros, NPI, layout, equipos). `public/docs/confidencial/` (guía de fixtura Pixid 300 + imágenes) está en `.gitignore` mientras el repo sea público: se publica en Netlify desde la copia local de Diego; cuando el repo sea privado, quitarlo de `.gitignore` y subirlo. La sección Confidencial de la página solo aparece si el PDF existe en el sitio.
 - `privado/` — **no está en el repo (repo público)**. Ahí iría material confidencial (p. ej. guía de diseño de fixtura Pixid 300, Kasalis Proprietary & Confidential); Diego lo tiene aparte. Nunca subirlo a un repo público; si el repo se vuelve privado, servirlo solo detrás del login.
 - `netlify.toml` — publish `public`, funciones en `netlify/functions`.
 
