@@ -10,7 +10,7 @@ import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { COOKIE, NIVELES, rango, firmar, verificar, hashPin, checkPin, type Sesion, type Nivel } from "../lib/auth.mts";
 import { secreto } from "../lib/secreto.mts";
-const ADMIN_NUM = "4019461"; // primer admin: se activa con la primera contraseña que se use
+const ADMIN_NUM = () => Netlify.env.get("ADMIN_NUM") || ""; // solo para recrear el primer admin si se pierde (variable de entorno)
 
 const DIAS_SESION = 30;
 const TIPOS = ["comentario", "foto", "correccion", "solucion", "duda"];
@@ -28,7 +28,7 @@ type Usuario = { num: string; nombre: string; nivel: Nivel; pin?: string; activo
 async function getUsuario(num: string): Promise<Usuario | null> {
   const u = (await st("usuarios").get(num, { type: "json" })) as Usuario | null;
   if (u) return u;
-  if (num === ADMIN_NUM) {   // reservado: aparece sin contraseña y la primera que se capture queda
+  if (ADMIN_NUM() && num === ADMIN_NUM()) {   // reservado: aparece sin contraseña y la primera que se capture queda
     const admin: Usuario = { num, nombre: "Diego", nivel: "admin", activo: true, creado: new Date().toISOString() };
     await st("usuarios").setJSON(num, admin, { onlyIfNew: true });
     return (await st("usuarios").get(num, { type: "json" })) as Usuario;
