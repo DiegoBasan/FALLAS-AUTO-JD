@@ -21,7 +21,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
   - `fallas-linea/` Fallas de línea: `data/lineas.js` (`MAQ` colores, `FALLAS`, `PROCESOS`).
   - `shared/` — `txt.js` (marcas de fuente), `flow.js` (flujo fijo `flowFijo`), `procs.js` (guías inline), `explica.js` (explicador de líneas ARC/VIS/PRE del KsDispense), `kasalis.js` + `kasalis-codes.js` (códigos PLC/KSvision y HINTS), `theme.js`, `ui.css`.
   - PDFs/txt del manual y parámetros (referencias de `docs.js`).
-- `public/docs/` — página Documentos (manual, códigos de error, parámetros, NPI, layout, equipos). `public/docs/confidencial/` (guía de fixtura Pixid 300 + imágenes) está en `.gitignore` mientras el repo sea público: se publica en Netlify desde la copia local de Diego; cuando el repo sea privado, quitarlo de `.gitignore` y subirlo. La sección Confidencial de la página solo aparece si el PDF existe en el sitio.
+- `public/docs/` — página Documentos (manual, códigos de error, parámetros, NPI, layout, equipos). `public/docs/confidencial/` (guía de fixtura Pixid 300 + imágenes) está en `.gitignore` mientras el repo sea público: se publica en Netlify desde una copia local (si un contenedor nuevo no la tiene: antes de publicar, bajarla del deploy anterior `https://<deployId>--jd-fallas.netlify.app/docs/confidencial/...` con una cookie de sesión válida y ponerla en `public/docs/confidencial/`; el deploy del MCP sí sube esa carpeta aunque esté en `.gitignore`); cuando el repo sea privado, quitarlo de `.gitignore` y subirlo. La sección Confidencial de la página solo aparece si el PDF existe en el sitio.
 - `privado/` — **no está en el repo (repo público)**. Ahí iría material confidencial (p. ej. guía de diseño de fixtura Pixid 300, Kasalis Proprietary & Confidential); Diego lo tiene aparte. Nunca subirlo a un repo público; si el repo se vuelve privado, servirlo solo detrás del login.
 - `netlify.toml` — publish `public`, funciones en `netlify/functions`.
 
@@ -42,7 +42,7 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 - Admin inicial (Diego) ya activado. Si se perdiera, poner la variable de entorno `ADMIN_NUM` con su número: ese usuario reaparece sin contraseña y la primera que capture en el panel queda. Niveles: operador, tecnico, ingeniero, admin.
 - Cliente: `public/shared/cuenta.js` (sesión, `track`, botón flotante ＋ Aportar, tarjetas de aportación, "Mis aportaciones"). Panel: `public/admin/index.html` (Aportaciones · Actividad · Usuarios · Accesos por nivel · Notificaciones).
 - Notificaciones: push con ntfy (tema en el panel → Notificaciones) y correo con Netlify Forms (formulario oculto `aportacion` en `public/index.html`; activar en Netlify → Notifications).
-- Plan gratis de Netlify: inyecta el aviso "Powered by Netlify" abajo a la derecha (no se puede ocultar en ese plan). La barra de pestañas deja una franja libre para él.
+- Plan gratis de Netlify: inyecta el aviso "Powered by Netlify" abajo a la derecha (no se puede ocultar en ese plan). En celular el menú flotante va arriba de él (`--nav-b` en `ui.css`).
 - Deploy: hoy se publica con el comando del MCP de Netlify (`deploy-site`) con `NODE_USE_ENV_PROXY=1`. Cuando el repo esté en GitHub, conectarlo en Netlify para publicar al hacer push.
 
 ## Ideas siguientes
