@@ -14,7 +14,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
 ## Estructura
 - `public/` — lo que se publica.
   - Es **una sola app instalable** (iPhone: Safari → Compartir → Agregar a inicio): `manifest.webmanifest` (scope `/`), `sw.js` único (red primero, copia sin señal; la API no se guarda), iconos en `icons/` + `apple-touch-icon.png`. Los `sw.js` de `buscador-kasalis/` y `fallas-linea/` solo desinstalan la versión vieja.
-  - `shared/app.js` (en todas las páginas): menú flotante glass de abajo (Inicio · Kasalis · Línea · Docs · Cuenta), modo standalone, registro del service worker. Estilos de app en `shared/ui.css` (`.gnav`, `.seg`, `--nav-b`/`--pad-b`/`--fab-b`). En celular el menú queda arriba del aviso de Netlify.
+  - `shared/app.js` (en todas las páginas): barra de pestañas de abajo estilo iOS (glass, de lado a lado: Inicio · Kasalis · Línea · Docs · Cuenta), modo standalone, registro del service worker. Estilos de app en `shared/ui.css` (`.gnav`, `.seg`, `--nav-h`/`--pad-b`/`--fab-b`).
   - `index.html` Inicio (búsqueda general, secciones, atajos por línea). `cuenta/` Cuenta (mis aportaciones, notas, atajos, instalar). `login/` entrar.
   - Dentro de Kasalis y Línea las sub-secciones van en un control segmentado arriba (Kasalis: Fallas · Códigos · Guías; Línea: Fallas · Procesos). En Kasalis los iconos llevan el color de su estación (`ESTACIONES` en `app.js`: Alineación `#12A594`, Dispensado `#D6409F`, Software/MES `#3E63DD`, General `#5E6B78`); en Línea el color de la línea.
   - `buscador-kasalis/` Fallas Kasalis: `app.js`, `data/fallas.js` (modos de falla con `flujo`, `causas`, `tips`), `data/procedimientos.js` (guías del programa), `data/imagenes.js` (fotos por paso, separadas de los textos), `data/debug.js` (material en revisión, p. ej. desglose de videos de entrenamiento), `data/docs.js` (texto del manual para búsqueda), `fotos/`.
@@ -42,7 +42,7 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 - Admin inicial (Diego) ya activado. Si se perdiera, poner la variable de entorno `ADMIN_NUM` con su número: ese usuario reaparece sin contraseña y la primera que capture en el panel queda. Niveles: operador, tecnico, ingeniero, admin.
 - Cliente: `public/shared/cuenta.js` (sesión, `track`, botón flotante ＋ Aportar, tarjetas de aportación, "Mis aportaciones"). Panel: `public/admin/index.html` (Aportaciones · Actividad · Usuarios · Accesos por nivel · Notificaciones).
 - Notificaciones: push con ntfy (tema en el panel → Notificaciones) y correo con Netlify Forms (formulario oculto `aportacion` en `public/index.html`; activar en Netlify → Notifications).
-- Plan gratis de Netlify: inyecta el aviso "Powered by Netlify" abajo a la derecha (no se puede ocultar en ese plan). En celular el menú flotante va arriba de él (`--nav-b` en `ui.css`).
+- Aviso "Powered by Netlify" (plan gratis): se apaga en Netlify → Project configuration → General → Powered by Netlify badge (lo inyecta el servidor; no se quita desde el código).
 - Deploy: hoy se publica con el comando del MCP de Netlify (`deploy-site`) con `NODE_USE_ENV_PROXY=1`. Cuando el repo esté en GitHub, conectarlo en Netlify para publicar al hacer push.
 
 ## Ideas siguientes

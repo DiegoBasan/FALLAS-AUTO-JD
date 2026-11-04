@@ -1,5 +1,5 @@
 /* Comportamiento de app (iPhone "Agregar a inicio" / Android "Instalar"):
-   - menú flotante de abajo (glass) igual en todas las secciones
+   - barra de pestañas de abajo (estilo iOS, glass, de lado a lado) igual en todas las secciones
    - service worker único (/sw.js) para que abra rápido y funcione sin señal
    - marca <html class="standalone"> cuando corre como app instalada
    Uso: <script src="/shared/app.js" defer></script>. Una página sin menú pone <body data-nonav>. */
@@ -21,7 +21,7 @@
     ['inicio','Inicio','/','var(--ink)'],
     ['kasalis','Kasalis','/buscador-kasalis/','#FF7F66'],
     ['linea','Línea','/fallas-linea/','#2F6BFF'],
-    ['docs','Docs','/docs/','#8A8A90'],
+    ['docs','Docs','/docs/','#636366'],
     ['cuenta','Cuenta','/cuenta/','var(--accent)']
   ];
   function activo(){

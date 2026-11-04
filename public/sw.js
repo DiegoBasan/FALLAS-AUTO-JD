@@ -1,6 +1,6 @@
 /* Service worker de la app JD Fallas (toda la app, scope /).
    Red primero y copia de respaldo para usarla sin señal en piso. La API nunca se guarda. */
-const CACHE = 'jdf-v1';
+const CACHE = 'jdf-v2';
 const CORE = ['/', '/buscador-kasalis/', '/fallas-linea/', '/docs/', '/cuenta/', '/shared/ui.css', '/shared/theme.js', '/shared/app.js',
   '/shared/cuenta.js', '/shared/txt.js', '/shared/flow.js', '/shared/procs.js', '/shared/kasalis.js', '/shared/kasalis-codes.js', '/shared/explica.js',
   '/buscador-kasalis/app.js', '/buscador-kasalis/data/fallas.js', '/buscador-kasalis/data/procedimientos.js', '/buscador-kasalis/data/imagenes.js',
