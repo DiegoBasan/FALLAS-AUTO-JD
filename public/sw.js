@@ -6,7 +6,7 @@
    - Páginas: red primero, pero si tarda más de 2.5 s o no hay red, sale lo guardado.
    - Al volver la señal, la app avisa ('refrescar') y se vuelve a bajar lo que haya cambiado o falte.
    - La API (/api), el login y el panel admin nunca se guardan. */
-const CACHE = 'jdf-v6';
+const CACHE = 'jdf-v7';
 const FONTS = 'jdf-fonts';
 const CORE = ['/', '/buscador-kasalis/', '/fallas-linea/', '/docs/', '/cuenta/',
   '/shared/ui.css', '/shared/theme.js', '/shared/app.js', '/shared/cuenta.js', '/shared/txt.js', '/shared/flow.js', '/shared/procs.js',
