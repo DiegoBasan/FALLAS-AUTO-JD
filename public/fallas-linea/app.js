@@ -62,7 +62,7 @@ function procesosTab(){
   return order.length ? order.map(l=>`<h3 class="lb">${esc(MAQ[l].n)}</h3><div class="list">${groups[l].map(procRow).join('')}</div>`).join('') : '<div class="empty">Sin procesos para esta línea todavía.</div>';
 }
 function infoTab(){
-  return `${cuentaHTML()}<h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Abre esta página en <b>Safari</b> → Compartir → <b>Agregar a pantalla de inicio</b>.</div>
+  return `${cuentaHTML()}<div class="link" onclick="location.href='/docs/'"><span>📄 Documentos: manual, códigos de error, layouts</span><span class="faint">›</span></div><h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Abre esta página en <b>Safari</b> → Compartir → <b>Agregar a pantalla de inicio</b>.</div>
     <h3 class="lb">Colores</h3><div class="list">${Object.entries(MAQ).map(([k,m])=>`<div class="row" ${k==='kasalis'?`onclick="location.href='${m.href}'"`:`data-f2="${k}"`}><b><span class="tag" style="--m:${m.c}">${esc(m.n)}</span></b><span>${esc(m.d||'')}</span><span class="faint">${k==='kasalis'?'↗':''}</span></div>`).join('')}</div>
     <h3 class="lb">Qué hay aquí</h3><div class="install"><b>Fallas</b>: cada falla de las estaciones de línea y hornos con su flujo (primero checar esto, luego esto…).<br><b>Procesos</b>: guías paso a paso (cambio de DELO, hornos, recetas, fixturas…).<br>Las fallas de la Kasalis están en su propia app: <a href="${MAQ.kasalis.href}"><b>Fallas Kasalis ↗</b></a></div>`;
 }

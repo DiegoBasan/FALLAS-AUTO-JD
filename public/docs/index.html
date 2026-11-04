@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Documentos · JD Fallas</title><meta name="theme-color" content="#f2f2f3">
+<script src="/shared/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/ui.css">
+<style>
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 16px 110px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.top h1{flex:1;margin:0;font-size:24px;letter-spacing:-.4px} .top a{color:inherit;font-weight:700;text-decoration:none;font-size:14px}
+h3{margin:20px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.d{display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);color:inherit;text-decoration:none;margin-bottom:8px}
+.d .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 auto;background:rgba(127,127,127,.14)}
+.d .ic.pdf{background:rgba(229,72,77,.13);color:#C2292E} .d .ic.img{background:rgba(47,107,255,.13);color:#2F6BFF} .d .ic.xls{background:rgba(34,160,107,.14);color:#17744D}
+.d b{display:block;font-size:15.5px} .d small{color:var(--ink2);font-size:13px} .d span.t{flex:1;min-width:0}
+.conf{border:1.5px dashed rgba(229,72,77,.45);border-radius:20px;padding:10px 10px 2px;margin-top:6px}
+.conf p{margin:2px 6px 10px;font-size:12.5px;color:#C2292E;font-weight:700}
+</style></head><body><main>
+<div class="top"><h1>Documentos</h1><a href="/">Inicio ›</a><button class="ibtn" data-theme-toggle></button></div>
+<div id="out"></div>
+</main>
+<script type="module">
+import {track} from '/shared/cuenta.js';
+const G = [
+  ['Kasalis Pixid 500', [
+    ['/KASALIS%20Pixid%20500%20Manual%20Rev%20022.pdf','Manual Pixid 500','Kasalis · Rev 022','pdf'],
+    ['/Error%20Codes%201%20(1).pdf','Error Codes','Códigos PLC (KSmessage)','pdf'],
+    ['/Error%20Extra%20Codes%201%20(1).pdf','Error Extra Codes','Códigos KSvision (negativos)','pdf'],
+    ['/Trace%20Log%20Bits%20(1).pdf','Trace Log Bits','Máscaras de log','pdf'],
+    ['/Par%C3%A1metros%20Kasalis%20%5BDR%5D%20%5BLP%5D%20%5BST%5D.txt','Parámetros de dispensado','Archivo KsDispense: ARC, VIS, PRE, DR, LP, ST…','txt'],
+    ['/Tutorial%20Active%20Alignment%20(1).html','Tutorial Active Alignment','Cómo funciona la alineación activa','html'],
+  ]],
+  ['Líneas y producto', [
+    ['/NPI%20Product%20Data%20-%20Camera%204.pdf','NPI Product Data','Flujos por producto','pdf'],
+    ['/layout%20moose%20scorpion%20gecko.png','Layout de instalación','Moose · Scorpion · Gecko','img'],
+    ['/Equipos%20John%20Deere.xlsx','Equipos John Deere','Lista de equipos','xls'],
+    ['/FLUJOS_COMPLETOS_CONTEXTO.txt','Contexto de flujos','Descripción por línea','txt'],
+  ]],
+];
+const CONF = [
+  ['/docs/confidencial/Pixid%20300%20Fixture%20Design%20Guidelines%20R2.1.pdf','Guía de diseño de fixtura Pixid 300','Kasalis · Rev 2.1','pdf'],
+  ['/docs/confidencial/fixtura/01-vista-general.jpg','Fixtura: vista general','Esferas, interposer PCB, imanes','img'],
+  ['/docs/confidencial/fixtura/02-alivio-pogo-pads.jpg','Fixtura: alivio de pogo pads','','img'],
+  ['/docs/confidencial/fixtura/03-pinout-pogo.jpg','Pinout de pogos (75 pines)','Señales MIPI, I2C, alimentación','img'],
+  ['/docs/confidencial/fixtura/04-fixtura-ejemplo.jpg','Fixtura de ejemplo','Socket, pogo pins, clamp','img'],
+  ['/docs/confidencial/fixtura/05-gripper.jpg','Brazos y dedos del gripper','','img'],
+  ['/docs/confidencial/fixtura/06-mesa-rotatoria.jpg','Interfaz con la mesa rotatoria','Pogos del sistema, imanes','img'],
+];
+const ICO = {pdf:'PDF', img:'IMG', xls:'XLS', txt:'TXT', html:'WEB'};
+const row = ([h,t,s,x]) => `<a class="d" href="${h}" target="_blank" rel="noopener"><span class="ic ${x}">${ICO[x]}</span><span class="t"><b>${t}</b>${s?`<small>${s}</small>`:''}</span><span class="faint">↗</span></a>`;
+let html = G.map(([n, l])=>`<h3>${n}</h3>${l.map(row).join('')}`).join('');
+// lo confidencial solo aparece si ya está en la app
+const hay = await fetch(CONF[0][0], {method:'HEAD'}).then(r=>r.ok && !r.redirected).catch(()=>false);
+if(hay) html += `<h3>Confidencial</h3><div class="conf"><p>Kasalis Proprietary and Confidential. No compartir fuera de la empresa.</p>${CONF.map(row).join('')}</div>`;
+document.getElementById('out').innerHTML = html;
+track('vista', {ruta:'docs', titulo:'Documentos'});
+</script></body></html>

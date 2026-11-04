@@ -275,6 +275,7 @@ function infoTab(){
     ${LEYENDA.replace('class="leyenda"','class="leyenda" style="margin:8px 0 0"')}</div>
     ${sh('doc','Mis notas (solo en este celular)')}<div class="install"><textarea id="misnotas" rows="5" placeholder="Contraseñas, extensiones, recordatorios… No se suben a ningún lado." style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--surface);color:inherit">${esc(notas)}</textarea></div>
     <h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Safari → <b>Compartir</b> → <b>Agregar a pantalla de inicio</b>. En Android: menú ⋮ → Instalar app.</div>
+    <div class="link" onclick="location.href='/docs/'"><span>📄 Documentos: manual, códigos de error, parámetros</span><span class="faint">›</span></div>
     <div class="link" onclick="location.href='../index.html'"><span>Inicio JD Fallas</span><span class="faint">›</span></div>`;
 }
 function searchView(q){
