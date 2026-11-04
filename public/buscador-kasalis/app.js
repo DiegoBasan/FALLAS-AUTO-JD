@@ -112,6 +112,7 @@ const ICONS = {
   dispensado:'<path d="M10 2h4v6l3 3v3H7v-3l3-3zM12 14v4M10 22a2 2 0 0 0 4 0"/>',
   delo:'<path d="M5 8h14M7 8v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8M9 8V4h6v4"/>',
   gripper:'<path d="M7 3v8l3 3v7M17 3v8l-3 3v7"/>',
+  'pick-choca':'<path d="M7 3v8l3 3v7M17 3v8l-3 3v7"/><path d="M3 21h18"/>',
   particulas:'<circle cx="7" cy="8" r="2"/><circle cx="16" cy="6" r="1.5"/><circle cx="14" cy="15" r="2.5"/><circle cx="6" cy="17" r="1.2"/>',
   software:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
   vis233:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -147,7 +148,7 @@ function docsHTML(docs, terms){
 /* inicio: lo más común arriba y lo demás agrupado por estación de la mesa */
 const COMUNES = ['comunicacion','alineacion','vis233','retest','despega'];
 const ESTACIONES = [
-  ['Alineación (+UV)', ['alineacion','prefocus','lensplace','despega','gripper','retest']],
+  ['Alineación (+UV)', ['alineacion','prefocus','lensplace','pick-choca','despega','gripper','retest']],
   ['Dispensado', ['vis233','dispensado','delo','particulas']],
   ['Software / MES', ['software','progresion']],
   ['General', ['comunicacion','mecanico']],

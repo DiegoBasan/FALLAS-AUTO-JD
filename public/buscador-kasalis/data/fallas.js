@@ -261,6 +261,24 @@ export const FALLAS = [
   tips:['[[d:MasterData: guarda absolutamente todo de cada pieza que pasó por la Kasalis desde que se instaló. Sirve si un parámetro cambió y no hay registro ni respaldo. Solo ingeniería tiene acceso.]]','[[d:El programa de segregación solo existe para Scorpion 95: después de usarlo, revisar que no queden sus logs en D:\\TARS\\Valid.]]'],
 },
 {
+  id:'pick-choca', titulo:'Pick del lente choca y mueve el plato', corto:'[[d:Al tomar el lente el gripper choca y recorre todo el plato (visto en Badger)]]',
+  codigos:[],
+  flujo:[
+    {p:'[[d:Validar que todo esté fijo y bien puesto]]', d:'[[d:Plato, interposer, el espacio donde va el lente (nido) y el lente.]]',
+     si:'[[d:Algo estaba flojo o mal puesto → corregirlo y probar.]]', no:'[[d:Todo bien → paso 2.]]'},
+    {proc:'inicializar', p:'[[d:Inicializar]]', d:'[[d:Por si las posiciones se recorrieron.]]',
+     si:'[[d:Ya no choca → listo.]]', no:'[[d:Sigue chocando → paso 3.]]'},
+    {p:'[[d:Mandar a alinear manual y pararlo justo antes de que cierre el gripper]]'},
+    {p:'[[d:Revisar físicamente hacia qué dirección hay que moverlo]]', d:'[[d:Ver la imagen de los ejes de la máquina.]]'},
+    {p:'[[d:Ajustar la posición y anotar los valores en que queda]]'},
+    {p:'[[d:Hacer backup de las posiciones actuales]]', d:'[[d:Antes de cambiar nada, para poder regresar.]]'},
+    {p:'[[d:Cambiar a los valores que anotaste]]'},
+    {p:'[[d:Validar paso a paso que ya quedó]]', d:'{{Correr el ciclo paso a paso viendo el pick, y luego una pieza completa.}}'},
+  ],
+  causas:[['[[d:Posición de pick del lente desajustada: el gripper choca y recorre el plato]]','[[d:Ajustar la posición con alineación manual y backup previo]]']],
+  tips:['[[d:Siempre hacer backup de las posiciones antes de modificarlas.]]'],
+},
+{
   id:'lensplace', titulo:'196 · No encuentra posición de pick/place', corto:'[[d:-910: el LensPlaceZ ajustado excede el límite del nominal]]',
   codigos:['196','-910'],
   flujo:[
