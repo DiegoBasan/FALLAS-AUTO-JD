@@ -71,3 +71,6 @@ button,.gnav,.seg,[data-go],.mode,.row,.link,.tile{-webkit-user-select:none;user
 @media (min-width:1000px){ .seg{max-width:1180px} }
 
 [hidden]{display:none!important}
+
+/* aviso "Powered by Netlify" del plan gratis: Netlify permite apagarlo (Project configuration → General); esto lo oculta mientras tanto */
+#nl-badge-frame{display:none!important}

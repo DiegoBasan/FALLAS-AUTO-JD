@@ -42,7 +42,7 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 - Admin inicial (Diego) ya activado. Si se perdiera, poner la variable de entorno `ADMIN_NUM` con su número: ese usuario reaparece sin contraseña y la primera que capture en el panel queda. Niveles: operador, tecnico, ingeniero, admin.
 - Cliente: `public/shared/cuenta.js` (sesión, `track`, botón flotante ＋ Aportar, tarjetas de aportación, "Mis aportaciones"). Panel: `public/admin/index.html` (Aportaciones · Actividad · Usuarios · Accesos por nivel · Notificaciones).
 - Notificaciones: push con ntfy (tema en el panel → Notificaciones) y correo con Netlify Forms (formulario oculto `aportacion` en `public/index.html`; activar en Netlify → Notifications).
-- Aviso "Powered by Netlify" (plan gratis): se apaga en Netlify → Project configuration → General → Powered by Netlify badge (lo inyecta el servidor; no se quita desde el código).
+- Aviso "Powered by Netlify" (plan gratis): se apaga en Netlify → Project configuration → General → Powered by Netlify badge (lo inyecta el servidor). Además `ui.css` oculta su iframe `#nl-badge-frame` con CSS.
 - Deploy: hoy se publica con el comando del MCP de Netlify (`deploy-site`) con `NODE_USE_ENV_PROXY=1`. Cuando el repo esté en GitHub, conectarlo en Netlify para publicar al hacer push.
 
 ## Ideas siguientes
