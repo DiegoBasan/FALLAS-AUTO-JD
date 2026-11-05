@@ -20,7 +20,7 @@ export const tx = s => esc(s)
   .replace(/\[\[([dmlje]):([\s\S]+?)\]\]/g, (_, k, t) => t)
   .replace(/\{\{([\s\S]+?)\}\}/g, '<span class="src src-c" title="Complemento de Claude: no confirmado en piso">$1</span>');
 export const plain = s => String(s??'').replace(/\{\{|\}\}/g, '').replace(/\[\[[dmlje]:|\]\]/g, '');
-export const LEYENDA = `<div class="leyenda"><span><span class="src src-c">Texto en morado</span> = complemento, falta confirmarlo en piso</span></div>`;
+export const LEYENDA = '';   // se quitó la leyenda del pie ("texto en morado = complemento") a pedido de Diego
 if(typeof document!=='undefined' && !document.getElementById('srcCSS')){
   const st = document.createElement('style'); st.id = 'srcCSS';
   st.textContent = Object.entries(FUENTES).map(([k,f])=>`.src-${k}{color:${f.c}}[data-theme=dark] .src-${k},.head .src-${k}{color:${f.d}}`).join('\n') + `

@@ -1,31 +1,30 @@
 /* Inventario de spare (JD Fallas → /inventario/). Todo bajo /api/inv/*.
    Blobs, store "inventario" (consistencia fuerte):
      doc      → { seq, items: { <id>: Item } }   (un solo documento; se escribe con etag para no pisar cambios)
-     config   → { areas, categorias, lineas, gavetas }
+     config   → { categorias, lineas, gavetas }   (gaveta = {id, n, tipo: piso | reja | maquina}; dibujo fijo, sin niveles)
+     importado → marca de la importación única del Excel anterior (ya no se puede repetir)
      m/<YYYY-MM>/<t36>-<r>  → movimiento (alta, entrada, retiro, edicion, baja, deshacer)
    Permisos: ver y retirar = cualquiera con cuenta · agregar / entrada / editar = técnico o más · eliminar y configuración = admin. */
 import { getStore } from "@netlify/blobs";
 import { rango, type Sesion } from "./auth.mts";
 
 type Item = {
-  id: string; pn: string; auto: boolean; sn: string; desc: string; cant: number; min: number;
-  cat: string; area: string; lineas: string[]; marca: string; equipo: string;
-  gaveta: string; nivel: number; lugar: string; notas: string; creado: string; act: string; por: string;
+  id: string; pn: string; auto: boolean; desc: string; cant: number; min: number;
+  cat: string; lineas: string[]; marca: string; equipo: string;
+  gaveta: string; lugar: string; foto: string; creado: string; act: string; por: string;
 };
 type Doc = { seq: number; items: Record<string, Item> };
 
+const TIPOS_GAV = ["piso", "reja", "maquina"];
+const IMPORT_HASH = "2767db6fd1a9e4ff3d7bd6ec0726c430362f7ffd55b453c30f69f5d05510879c";
 export const CONFIG_BASE = {
-  areas: [
-    { id: "kasalis", n: "Spare Kasalis", c: "#FF7F66" },
-    { id: "estaciones", n: "Spare estaciones (Moose / Scorpion / ELK)", c: "#2F6BFF" },
-    { id: "gecko", n: "Spare Gecko", c: "#8B5CF6" },
-  ],
   categorias: ["Sensores", "Neumática", "Control (PLC / drivers)", "Cables", "PC / cómputo", "Fixtura", "Torque", "Keyence / visión",
     "Pogos e interposers", "Dispensado (DELO, agujas, motor)", "UV / óptica", "Mecánica (tornillería, rodamientos)", "Otros"],
   lineas: ["Gecko", "ELK", "Scorpion", "Moose", "Infurrow", "Spare"],
   gavetas: [
-    { id: "g1", n: "Gaveta gris alta", tipo: "alta", niveles: 6 },
-    { id: "g2", n: "Gaveta de reja", tipo: "reja", niveles: 3 },
+    { id: "g1", n: "Gaveta Piso", tipo: "piso" },
+    { id: "g2", n: "Gaveta de reja", tipo: "reja" },
+    { id: "kasalis-scorpion", n: "Kasalis Scorpion", tipo: "maquina" },
   ],
 };
 
@@ -46,13 +45,21 @@ async function mutar<T>(fn: (doc: Doc) => T | Promise<T>): Promise<T> {
   for (let i = 0; i < 6; i++) {
     const { doc, etag } = await leerDoc();
     const out = await fn(doc);
-    const r = etag ? await st().setJSON("doc", doc, { onlyIfMatch: etag }) : await st().setJSON("doc", doc, { onlyIfNew: true });
+    // INV_SIN_ETAG=1 solo para probar con `netlify dev` (el simulador local de Blobs no respeta onlyIfMatch)
+    const r = Netlify.env.get("INV_SIN_ETAG") === "1" ? await st().setJSON("doc", doc)
+      : etag ? await st().setJSON("doc", doc, { onlyIfMatch: etag }) : await st().setJSON("doc", doc, { onlyIfNew: true });
     if (r.modified) return out;
     await new Promise(res => setTimeout(res, 80 + Math.random() * 200));
   }
   throw new Error("Otra persona estaba guardando al mismo tiempo. Intenta otra vez.");
 }
-async function getConfig() { return ((await st().get("config", { type: "json" })) as typeof CONFIG_BASE) || CONFIG_BASE; }
+async function getConfig(): Promise<typeof CONFIG_BASE> {
+  const c = (await st().get("config", { type: "json" })) as any;
+  if (!c) return CONFIG_BASE;
+  // configuraciones viejas (con áreas y gavetas "alta" por niveles) se leen con el formato nuevo
+  return { categorias: c.categorias || CONFIG_BASE.categorias, lineas: c.lineas || CONFIG_BASE.lineas,
+    gavetas: (c.gavetas || CONFIG_BASE.gavetas).map((g: any) => ({ id: g.id, n: g.n, tipo: TIPOS_GAV.includes(g.tipo) ? g.tipo : "piso" })) };
+}
 
 async function movimiento(m: Record<string, unknown>, s: Sesion) {
   const t = Date.now(), key = `m/${mes()}/${t.toString(36)}-${rid()}`;
@@ -75,15 +82,15 @@ async function movs({ meses = 2, item, limite = 500 }: { meses?: number; item?: 
 function limpiarItem(d: any, cfg: typeof CONFIG_BASE, base?: Item): Omit<Item, "id" | "pn" | "auto" | "creado" | "act" | "por"> {
   const g = cfg.gavetas.find(x => x.id === d.gaveta);
   return {
-    sn: txt(d.sn ?? base?.sn, 80), desc: txt(d.desc ?? base?.desc, 300), cant: Math.max(0, num(d.cant ?? base?.cant)),
-    min: Math.max(0, num(d.min ?? base?.min)), cat: txt(d.cat ?? base?.cat, 80), area: txt(d.area ?? base?.area, 40),
+    desc: txt(d.desc ?? base?.desc, 300), cant: Math.max(0, num(d.cant ?? base?.cant)),
+    min: Math.max(0, num(d.min ?? base?.min)), cat: txt(d.cat ?? base?.cat, 80),
     lineas: (Array.isArray(d.lineas) ? d.lineas : base?.lineas || []).map((x: unknown) => txt(x, 30)).filter(Boolean).slice(0, 10),
     marca: txt(d.marca ?? base?.marca, 80), equipo: txt(d.equipo ?? base?.equipo, 120),
-    gaveta: g ? g.id : txt(base?.gaveta, 40), nivel: g ? Math.min(g.niveles, Math.max(0, num(d.nivel))) : num(base?.nivel),
-    lugar: txt(d.lugar ?? base?.lugar, 120), notas: txt(d.notas ?? base?.notas, 1000),
+    gaveta: g ? g.id : txt(base?.gaveta, 40), lugar: txt(d.lugar ?? base?.lugar, 120),
+    foto: txt(d.foto ?? base?.foto, 60).replace(/[^\w-]/g, ""),
   };
 }
-const CAMPOS: (keyof Item)[] = ["pn", "sn", "desc", "cant", "min", "cat", "area", "lineas", "marca", "equipo", "gaveta", "nivel", "lugar", "notas"];
+const CAMPOS: (keyof Item)[] = ["pn", "desc", "cant", "min", "cat", "lineas", "marca", "equipo", "gaveta", "lugar", "foto"];
 
 export async function inv(req: Request, ruta: string[], s: Sesion, admin: boolean): Promise<Response> {
   const [a] = ruta; const M = req.method;
@@ -103,15 +110,37 @@ export async function inv(req: Request, ruta: string[], s: Sesion, admin: boolea
       if (!admin) return err("Solo el administrador.", 403);
       const d = await body(), c = d.config || {};
       const cfg = {
-        areas: (c.areas || []).map((x: any) => ({ id: txt(x.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, "") || rid(), n: txt(x.n, 80), c: /^#[0-9a-f]{6}$/i.test(x.c) ? x.c : "#5E6B78" })).filter((x: any) => x.n),
         categorias: (c.categorias || []).map((x: unknown) => txt(x, 60)).filter(Boolean),
         lineas: (c.lineas || []).map((x: unknown) => txt(x, 30)).filter(Boolean),
-        gavetas: (c.gavetas || []).map((x: any) => ({ id: txt(x.id, 30).replace(/[^\w-]/g, "") || "g" + rid(), n: txt(x.n, 80), tipo: x.tipo === "reja" ? "reja" : "alta", niveles: Math.min(12, Math.max(1, num(x.niveles, 4))) })).filter((x: any) => x.n),
+        gavetas: (c.gavetas || []).map((x: any) => ({ id: txt(x.id, 30).replace(/[^\w-]/g, "") || "g" + rid(), n: txt(x.n, 80), tipo: TIPOS_GAV.includes(x.tipo) ? x.tipo : "piso" })).filter((x: any) => x.n),
       };
-      if (!cfg.areas.length || !cfg.gavetas.length) return err("Debe quedar al menos un área y una gaveta.");
+      if (!cfg.gavetas.length) return err("Debe quedar al menos una gaveta.");
       await st().setJSON("config", cfg);
       await movimiento({ tipo: "config", desc: "Configuración actualizada" }, s);
       return json({ ok: true, config: cfg });
+    }
+    /* Importación ÚNICA del inventario anterior (Excel): borra el material, historial y configuración de ejemplo y carga los materiales.
+       Pide una clave cuyo hash está aquí (la clave no está en el repo) y solo se puede hacer una vez. */
+    if (a === "importar" && M === "POST") {
+      const d = await body();
+      const h = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(d.clave || "")))), b => b.toString(16).padStart(2, "0")).join("");
+      if (h !== IMPORT_HASH) return err("No autorizado.", 403);
+      if (await st().get("importado")) return err("La importación ya se hizo.", 409);
+      const cfg = CONFIG_BASE;
+      const items: Record<string, Item> = {}, now = new Date().toISOString();
+      for (const x of (Array.isArray(d.items) ? d.items : []).slice(0, 2000)) {
+        const pn = txt(x.pn, 80).toUpperCase(); if (!pn) continue;
+        const id = `${Date.now().toString(36)}${rid()}`;
+        items[id] = { id, pn, auto: false, ...limpiarItem(x, cfg), creado: now, act: now, por: "Importado del Excel" };
+      }
+      // borrar lo de ejemplo: movimientos y fotos no hay; doc y config se reemplazan
+      const { blobs } = await st().list({ prefix: "m/" });
+      await Promise.all(blobs.map(b => st().delete(b.key)));
+      await st().setJSON("config", cfg);
+      await st().setJSON("doc", { seq: 0, items });
+      await st().setJSON("importado", { fecha: now, n: Object.keys(items).length, por: s.nombre });
+      await movimiento({ tipo: "config", desc: `Se importaron ${Object.keys(items).length} materiales del inventario anterior (Excel)` }, s);
+      return json({ ok: true, n: Object.keys(items).length, borrados: blobs.length });
     }
     if (a === "op" && M === "POST") {
       const d = await body(); const op = d.op; const cfg = await getConfig();
@@ -141,7 +170,7 @@ export async function inv(req: Request, ruta: string[], s: Sesion, admin: boolea
         const r = await mutar(doc => {
           let pn = txt(d.item?.pn, 80).toUpperCase(), auto = false;
           if (!pn) { doc.seq = (doc.seq || 0) + 1; pn = `AUT-${String(doc.seq).padStart(5, "0")}`; auto = true; }
-          if (Object.values(doc.items).some(x => x.pn.toUpperCase() === pn && (x.sn || "") === base.sn)) throw new Error(`Ya existe ${pn}${base.sn ? " con ese SN" : ""}. Usa "Entrada" para sumar cantidad.`);
+          if (Object.values(doc.items).some(x => x.pn.toUpperCase() === pn)) throw new Error(`Ya existe ${pn}. Usa "Entrada" para sumar cantidad.`);
           const now = new Date().toISOString(), id = `${Date.now().toString(36)}${rid()}`;
           const it: Item = { id, pn, auto, ...base, creado: now, act: now, por: s.nombre };
           doc.items[id] = it; return it;

@@ -1,6 +1,7 @@
-/* Inventario de spare: buscar, agregar, retirar, dar entrada, editar, historial y configuración (gavetas, áreas, categorías, líneas).
-   Datos en /api/inv/* (netlify/lib/inv.mts). */
+/* Inventario de spare: buscar (texto, escáner o por foto), agregar con foto, retirar, dar entrada, editar, historial y configuración.
+   Datos en /api/inv/* (netlify/lib/inv.mts). Fotos en /api/foto (comprimidas en el celular antes de subir). */
 import {track} from '/shared/cuenta.js';
+import {escanear} from '/shared/escaner.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -13,34 +14,72 @@ async function api(path, opt={}){
 }
 const op = (o) => api('op', {method:'POST', body: JSON.stringify(o)});
 
-let S = {config:null, items:[], ultimos:[], permisos:{}}, vista = 'inicio', F = {area:'', linea:'', cat:'', gaveta:'', q:''}, lote = null;
-const area = id => S.config.areas.find(a=>a.id===id) || {n:id||'Sin área', c:'#8A8A90'};
+let S = {config:null, items:[], ultimos:[], permisos:{}}, vista = 'inicio', F = {linea:'', cat:'', gaveta:'', q:''}, lote = null, modoBusq = 'lista', gavFoto = '';
+const COL_LINEA = {gecko:'#8B5CF6', moose:'#F08C00', scorpion:'#2F6BFF', elk:'#12A594', spare:'#5E6B78', infurrow:'#8A8A90'};
+const colItem = it => COL_LINEA[norm((it.lineas||[])[0])] || '#5E6B78';
 const gav = id => S.config.gavetas.find(g=>g.id===id);
+const fotoUrl = id => `/api/foto/${encodeURIComponent(id)}`;
+/* foto: se reduce a 1024 px y JPEG 70 % (≈ 80-200 KB): legible para leer etiquetas y no ocupa casi nada */
+async function comprimir(file){
+  const img = await new Promise((ok, no)=>{ const i = new Image(); i.onload = ()=>ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+  const k = Math.min(1, 1024 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src);
+  return c.toDataURL('image/jpeg', .7);
+}
+async function subirFoto(dataUrl){
+  const r = await fetch('/api/foto', {method:'POST', credentials:'same-origin', headers:{'content-type':'application/json'}, body: JSON.stringify({foto: dataUrl})});
+  const j = await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error || 'No se pudo subir la foto'); return j.id;
+}
+function verFoto(src){ const d = document.createElement('div'); d.style.cssText = 'position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.94);display:grid;place-items:center;padding:16px'; d.innerHTML = `<img src="${src}" style="max-width:100%;max-height:100%;border-radius:10px">`; d.onclick = () => d.remove(); document.body.appendChild(d); }
 const bajo = it => it.min > 0 && it.cant <= it.min;
 
-/* ---------- dibujo de gavetas ---------- */
-export function gavSVG(g, sel=0, {clic=false, alto=96} = {}){
+/* ---------- dibujo de gavetas (fijo, solo para reconocerlas) ---------- */
+export function gavSVG(g, {alto=96} = {}){
   if(!g) return '';
-  const n = g.niveles, on = 'var(--inv)';
-  if(g.tipo === 'reja'){   // chaparra, ancha, de reja
-    const W = 240, H = 130, x0 = 10, y0 = 12, w = W-20, h = H-30, rh = h/n;
-    let s = `<svg class="niv" viewBox="0 0 ${W} ${H}" style="height:${alto}px"><defs><pattern id="reja${g.id}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0L8 8M8 0L0 8" stroke="#8A8F98" stroke-width=".8"/></pattern></defs>
-      <rect x="${x0-4}" y="${y0-6}" width="${w+8}" height="${h+12}" rx="6" fill="#5F656E"/>`;
-    for(let i=0;i<n;i++){ const y = y0 + i*rh, act = sel===i+1;
-      s += `<rect class="n" data-niv="${i+1}" x="${x0}" y="${y+1.5}" width="${w}" height="${rh-3}" rx="3" fill="${act?on:'#C9CDD3'}"/><rect x="${x0}" y="${y+1.5}" width="${w}" height="${rh-3}" rx="3" fill="url(#reja${g.id})" opacity="${act?.25:.9}" pointer-events="none"/>
-        <text x="${x0+8}" y="${y+rh/2+4}" font-size="11" font-weight="800" fill="${act?'#fff':'#3A3F47'}" pointer-events="none">${i+1}</text>`; }
-    return s + `<rect x="${x0}" y="${H-14}" width="10" height="10" fill="#5F656E"/><rect x="${W-20}" y="${H-14}" width="10" height="10" fill="#5F656E"/></svg>`;
+  if(g.tipo === 'reja'){   // 3 repisas con varias cajas en cada una
+    const W = 240, H = 150;
+    const cajas = [[6,5,7,4,6],[5,7,5,6],[7,4,6,5,5]];
+    const colores = ['#4A7BD0','#D0503F','#E2A43A','#3E9E6E','#7D6BC9','#4A7BD0','#E2A43A'];
+    let s = `<svg viewBox="0 0 ${W} ${H}" style="height:${alto}px"><defs><pattern id="rj${g.id}" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 0L7 7M7 0L0 7" stroke="#9AA0A8" stroke-width=".7"/></pattern></defs>
+      <rect x="6" y="6" width="${W-12}" height="${H-18}" rx="6" fill="#5F656E"/><rect x="12" y="12" width="${W-24}" height="${H-30}" rx="3" fill="url(#rj${g.id})" opacity=".55"/>`;
+    const rh = (H-30)/3;
+    cajas.forEach((fila, r) => {
+      const y = 12 + r*rh, tot = fila.reduce((a,b)=>a+b,0); let x = 16;
+      fila.forEach((w0, k) => { const w = (W-32 - (fila.length-1)*4) * w0/tot, h = rh-12;
+        s += `<rect x="${x}" y="${y+rh-6-h}" width="${w}" height="${h}" rx="3" fill="${colores[(r*3+k)%colores.length]}"/><rect x="${x+w*.3}" y="${y+rh-6-h+5}" width="${w*.4}" height="4" rx="2" fill="rgba(255,255,255,.55)"/>`; x += w + 4; });
+      s += `<rect x="12" y="${y+rh-6}" width="${W-24}" height="4" fill="#7A8089"/>`;
+    });
+    return s + `<rect x="12" y="${H-12}" width="12" height="10" fill="#5F656E"/><rect x="${W-24}" y="${H-12}" width="12" height="10" fill="#5F656E"/></svg>`;
   }
-  // alta, gris, de cajones
-  const W = 130, H = 230, x0 = 12, y0 = 12, w = W-24, h = H-28, rh = h/n;
-  let s = `<svg class="niv" viewBox="0 0 ${W} ${H}" style="height:${alto}px"><rect x="4" y="4" width="${W-8}" height="${H-12}" rx="8" fill="#8E949C"/>`;
-  for(let i=0;i<n;i++){ const y = y0 + i*rh, act = sel===i+1;
-    s += `<rect class="n" data-niv="${i+1}" x="${x0}" y="${y+2}" width="${w}" height="${rh-4}" rx="4" fill="${act?on:'#C5CAD1'}"/>
-      <rect x="${W/2-14}" y="${y+rh/2-2.5}" width="28" height="5" rx="2.5" fill="${act?'#fff':'#6B7079'}" pointer-events="none"/>
-      <text x="${x0+7}" y="${y+14}" font-size="11" font-weight="800" fill="${act?'#fff':'#3A3F47'}" pointer-events="none">${i+1}</text>`; }
-  return s + `<rect x="10" y="${H-8}" width="14" height="6" fill="#6B7079"/><rect x="${W-24}" y="${H-8}" width="14" height="6" fill="#6B7079"/></svg>`;
+  if(g.tipo === 'maquina'){   // Kasalis Scorpion: gabinete blanco con laterales rojos, pantallas, teclado y puertas abajo
+    const W = 200, H = 240;
+    return `<svg viewBox="0 0 ${W} ${H}" style="height:${alto}px">
+      <rect x="10" y="8" width="180" height="226" rx="4" fill="#ECEDEF" stroke="#C9CDD3"/>
+      <rect x="10" y="8" width="24" height="120" fill="#D8262C"/><rect x="166" y="8" width="24" height="120" fill="#D8262C"/>
+      <rect x="40" y="16" width="34" height="24" rx="2" fill="#DDE6EE" stroke="#9AA4AE"/>
+      <rect x="112" y="18" width="46" height="34" rx="2" fill="#2A2F36"/><rect x="115" y="21" width="40" height="28" fill="#6E8FB8"/>
+      <rect x="76" y="54" width="54" height="40" rx="2" fill="#2A2F36"/><rect x="79" y="57" width="48" height="34" fill="#7FA3C9"/>
+      <path d="M44 50 l10 0 l6 40 l-8 0z" fill="#B8BDC4"/><rect x="42" y="88" width="10" height="16" fill="#D8262C"/>
+      <rect x="36" y="104" width="128" height="6" fill="#C9CDD3"/>
+      <rect x="40" y="112" width="58" height="12" rx="2" fill="#4B5058"/><rect x="100" y="112" width="12" height="12" rx="2" fill="#3E9E6E"/>
+      <rect x="150" y="96" width="5" height="22" rx="2" fill="#2A2F36"/>
+      <rect x="18" y="132" width="164" height="96" rx="3" fill="#E2E4E7" stroke="#C9CDD3"/>
+      <line x1="100" y1="134" x2="100" y2="226" stroke="#C9CDD3" stroke-width="2"/>
+      <rect x="84" y="176" width="5" height="16" rx="2" fill="#8E949C"/><rect x="111" y="176" width="5" height="16" rx="2" fill="#8E949C"/>
+      <rect x="66" y="142" width="40" height="22" fill="#fff" stroke="#C9CDD3"/><path d="M80 196 l8 -12 l8 12z" fill="#F2C230"/>
+      <rect x="20" y="234" width="16" height="4" fill="#6B7079"/><rect x="164" y="234" width="16" height="4" fill="#6B7079"/></svg>`;
+  }
+  // piso: gris alta con 2 puertas verticales
+  const W = 130, H = 230;
+  return `<svg viewBox="0 0 ${W} ${H}" style="height:${alto}px"><rect x="4" y="4" width="${W-8}" height="${H-14}" rx="8" fill="#8E949C"/>
+    <rect x="11" y="11" width="${(W-26)/2}" height="${H-28}" rx="4" fill="#C5CAD1"/><rect x="${15+(W-26)/2}" y="11" width="${(W-26)/2}" height="${H-28}" rx="4" fill="#C5CAD1"/>
+    <rect x="${W/2-11}" y="${H/2-22}" width="5" height="34" rx="2.5" fill="#6B7079"/><rect x="${W/2+6}" y="${H/2-22}" width="5" height="34" rx="2.5" fill="#6B7079"/>
+    <rect x="${W/2-14}" y="20" width="28" height="10" rx="2" fill="#E9EBEE"/>
+    <rect x="10" y="${H-10}" width="14" height="8" fill="#6B7079"/><rect x="${W-24}" y="${H-10}" width="14" height="8" fill="#6B7079"/></svg>`;
 }
-const lugarTxt = it => { const g = gav(it.gaveta); return [g?.n || '', it.nivel ? `${g?.tipo==='reja'?'repisa':'cajón'} ${it.nivel}` : '', it.lugar].filter(Boolean).join(' · '); };
+const lugarTxt = it => [gav(it.gaveta)?.n || '', it.lugar].filter(Boolean).join(' · ');
+const TIPO_GAV = {piso:'Gaveta de piso (2 puertas)', reja:'Reja con cajas (3 niveles)', maquina:'Máquina (Kasalis)'};
 
 /* ---------- piezas ---------- */
 const IC = {
@@ -48,9 +87,8 @@ const IC = {
 };
 const ico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
 function itemHTML(it){
-  const a = area(it.area);
-  return `<div class="it${lote && lote.has(it.id)?' sel':''}" data-it="${esc(it.id)}" style="--c:${a.c}"><span class="ar">${ico('caja')}</span>
-    <span><b>${esc(it.desc)}${bajo(it)?'<span class="bajo">BAJO</span>':''}</b><small><span class="pn">${esc(it.pn)}</span>${it.sn?` · SN ${esc(it.sn)}`:''} · ${esc(it.cat||'Sin categoría')}${it.marca?' · '+esc(it.marca):''}</small>
+  return `<div class="it${lote && lote.has(it.id)?' sel':''}" data-it="${esc(it.id)}" style="--c:${colItem(it)}"><span class="ar">${it.foto?`<img loading="lazy" src="${fotoUrl(it.foto)}" alt="">`:ico('caja')}</span>
+    <span><b>${esc(it.desc)}${bajo(it)?'<span class="bajo">BAJO</span>':''}</b><small><span class="pn">${esc(it.pn)}</span> · ${esc(it.cat||'Sin categoría')}${it.marca?' · '+esc(it.marca):''}</small>
     <small>📍 ${esc(lugarTxt(it) || 'Sin lugar')}${it.lineas?.length?' · '+esc(it.lineas.join(', ')):''}</small></span>
     <span class="q2"><b>${it.cant}</b><br><span>pzas</span></span></div>`;
 }
@@ -63,17 +101,19 @@ function movHTML(m){
 }
 function filtrar(lst){
   const q = norm(F.q).trim(), toks = q.split(/\s+/).filter(Boolean);
-  return lst.filter(it => (!F.area || it.area===F.area) && (!F.linea || (it.lineas||[]).includes(F.linea)) && (!F.cat || it.cat===F.cat) && (!F.gaveta || it.gaveta===F.gaveta)
-    && toks.every(t => norm([it.pn, it.sn, it.desc, it.cat, it.marca, it.equipo, it.lugar, it.notas, (it.lineas||[]).join(' '), area(it.area).n].join(' ')).includes(t)))
+  return lst.filter(it => (!F.linea || (it.lineas||[]).includes(F.linea)) && (!F.cat || it.cat===F.cat) && (!F.gaveta || it.gaveta===F.gaveta)
+    && toks.every(t => norm([it.pn, it.desc, it.cat, it.marca, it.equipo, it.lugar, (it.lineas||[]).join(' '), gav(it.gaveta)?.n].join(' ')).includes(t)))
     .sort((a,b)=> (bajo(b)-bajo(a)) || a.desc.localeCompare(b.desc));
 }
-const chipsArea = () => `<div class="chips">${[{id:'',n:'Todo',c:'transparent'}, ...S.config.areas].map(a=>`<button data-area="${esc(a.id)}" class="${F.area===a.id?'on':''}" style="--c:${a.c}">${a.id?'<i></i>':''}${esc(a.n)}</button>`).join('')}</div>`;
+const chipsLinea = () => `<div class="chips">${['', ...S.config.lineas].map(l=>`<button data-linea="${esc(l)}" class="${F.linea===l?'on':''}" style="--c:${COL_LINEA[norm(l)]||'#5E6B78'}">${l?'<i></i>':''}${esc(l||'Todo')}</button>`).join('')}</div>`;
+const ESC_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>';
+const caja = (id, ph) => `<div class="q">${'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'}<input id="${id}" placeholder="${ph}" value="${esc(id==='qq'?F.q:'')}" autocomplete="off"><button class="scan" data-a="scan" data-para="${id}" aria-label="Escanear código">${ESC_IC}</button></div>`;
 
 /* ---------- vistas ---------- */
 function vInicio(){
   const bajos = S.items.filter(bajo);
   const lst = filtrar(S.items);
-  return `<div class="cols"><div class="card"><div class="q">${'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'}<input id="qq" placeholder="Buscar: número de parte, SN, descripción, marca, gaveta…" value="${esc(F.q)}" autocomplete="off"></div>
+  return `<div class="cols"><div class="card">${caja('qq', 'Buscar: número de parte, descripción, marca…')}
       <div class="acc">${S.permisos.editar?'<button class="ag" data-a="alta"><i>＋</i><b>Agregar</b><small>Material nuevo</small></button>':''}
         <button class="re" data-a="retiro"><i>−</i><b>Retirar</b><small>Sacar piezas</small></button>
         ${S.permisos.editar?'<button class="en" data-a="entrada"><i>↥</i><b>Entrada</b><small>Sumar a uno existente</small></button>':''}</div>
@@ -81,18 +121,28 @@ function vInicio(){
     <div class="card"><b style="font-size:16px">Últimos movimientos</b>${S.ultimos.length ? S.ultimos.slice(0,6).map(movHTML).join('') : '<div class="empty">Sin movimientos todavía.</div>'}
       <div style="margin-top:8px"><button class="btn" data-v="historial">Ver historial completo ›</button></div></div></div>
     ${bajos.length?`<div class="card" style="border-color:rgba(229,72,77,.4)"><b style="color:#C2292E">⚠ ${bajos.length} con poco stock</b><div class="lst" style="margin-top:8px">${bajos.slice(0,5).map(itemHTML).join('')}</div></div>`:''}
-    <h3 class="lb">Material (${lst.length})</h3>${chipsArea()}<div class="lst">${lst.slice(0,60).map(itemHTML).join('') || vacio()}</div>
+    <h3 class="lb">Material (${lst.length})</h3>${chipsLinea()}<div class="lst">${lst.slice(0,60).map(itemHTML).join('') || vacio()}</div>
     ${lst.length>60?`<div style="margin-top:10px"><button class="btn" data-v="buscar">Ver los ${lst.length} en Búsqueda ›</button></div>`:''}`;
 }
 const vacio = () => `<div class="empty">${S.items.length ? 'Nada coincide con la búsqueda.' : 'Todavía no hay material. ' + (S.permisos.editar ? 'Toca <b>Agregar</b> para empezar.' : '')}</div>`;
 function vBuscar(){
+  const modos = `<div class="pick" style="margin-bottom:12px"><button data-modo="lista" class="${modoBusq==='lista'?'on':''}">☰ Lista</button><button data-modo="foto" class="${modoBusq==='foto'?'on':''}">🖼 Por foto</button></div>`;
+  if(modoBusq === 'foto') return modos + vFotos();
   const lst = filtrar(S.items), sel = (k, l, n) => `<select data-f="${k}"><option value="">${n}: todas</option>${l.map(x=>{ const v = typeof x==='string'?x:x.id, t = typeof x==='string'?x:x.n; return `<option value="${esc(v)}" ${F[k]===v?'selected':''}>${esc(t)}</option>`; }).join('')}</select>`;
-  return `<div class="q" style="margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="qq" placeholder="Buscar…" value="${esc(F.q)}" autocomplete="off"></div>
-    <div class="filt">${sel('area', S.config.areas, 'Área')}${sel('linea', S.config.lineas, 'Línea')}${sel('cat', S.config.categorias, 'Categoría')}${sel('gaveta', S.config.gavetas, 'Gaveta')}</div>
+  return `${modos}<div style="margin-bottom:10px">${caja('qq', 'Buscar…')}</div>
+    <div class="filt">${sel('linea', S.config.lineas, 'Línea')}${sel('cat', S.config.categorias, 'Categoría')}${sel('gaveta', S.config.gavetas, 'Gaveta')}</div>
     <div class="row2" style="margin-bottom:10px"><b style="flex:1">${lst.length} materiales · ${lst.reduce((a,b)=>a+b.cant,0)} piezas</b>
       <button class="btn" data-a="csv">⤓ Exportar CSV</button>${S.permisos.editar?`<button class="btn" data-a="lote">${lote?'Cancelar selección':'Editar en lote'}</button>`:''}</div>
     ${lote?`<div class="card row2" style="background:color-mix(in srgb,var(--inv) 8%,var(--surface))"><b style="flex:1">${lote.size} seleccionados · toca para marcar</b><button class="btn" data-a="lote-todo">Marcar todos</button><button class="btn dk" data-a="lote-ok" ${lote.size?'':'disabled'}>Cambiar…</button></div>`:''}
     <div class="lst">${lst.map(itemHTML).join('') || vacio()}</div>`;
+}
+/* búsqueda visual: eliges la gaveta y ves las fotos de lo que hay ahí */
+function vFotos(){
+  if(!gavFoto) return `<div class="sub2">¿En qué gaveta lo buscas?</div><div class="gav">${S.config.gavetas.map(g=>{ const n = S.items.filter(i=>i.gaveta===g.id).length;
+    return `<button type="button" data-gf="${esc(g.id)}">${gavSVG(g,{alto:110})}<span>${esc(g.n)}</span><small>${n} material${n===1?'':'es'}</small></button>`; }).join('')}</div>`;
+  const g = gav(gavFoto), lst = S.items.filter(i=>i.gaveta===gavFoto).sort((a,b)=>(!!b.foto - !!a.foto) || a.desc.localeCompare(b.desc));
+  return `<div class="row2" style="margin-bottom:10px"><button class="btn" data-gf="">‹ Gavetas</button><b style="flex:1">${esc(g?.n||'')} · ${lst.length}</b></div>
+    <div class="mosaico">${lst.map(it=>`<button type="button" data-it="${esc(it.id)}">${it.foto?`<img loading="lazy" src="${fotoUrl(it.foto)}" alt="">`:`<span class="sinf">${ico('caja')}<em>Sin foto</em></span>`}<b>${esc(it.desc)}</b><small>${esc(it.pn)} · ${it.cant} pzas</small></button>`).join('') || '<div class="empty">No hay material en esta gaveta.</div>'}</div>`;
 }
 let MOVS = null, MF = {tipo:'', q:''};
 async function vHistorial(){
@@ -107,17 +157,15 @@ function vConfig(){
   if(!S.permisos.admin) return `<div class="card" style="max-width:420px"><b style="font-size:16px">Confirma tu contraseña de admin</b><div class="faint" style="font-size:13.5px;margin:6px 0 12px">Para cambiar la configuración o eliminar material.</div>
     <input id="admPin" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:inherit;font:inherit;font-size:16px;padding:0 12px">
     <div class="err" id="admErr" style="color:#C2292E;font-size:14px;margin-top:8px"></div><button class="btn dk" data-a="adm-ok" style="margin-top:10px;width:100%;height:48px">Entrar como admin</button></div>`;
-  return `<div class="cfg"><div class="card"><b style="font-size:16px">Gavetas</b><div class="faint" style="font-size:13px;margin:4px 0 10px">Tipo: alta (gris, de cajones) o reja (chaparra y ancha). Niveles = cajones o repisas.</div>
+  return `<div class="cfg"><div class="card"><b style="font-size:16px">Gavetas y lugares</b><div class="faint" style="font-size:13px;margin:4px 0 10px">El dibujo es solo para reconocerla: de piso (2 puertas), reja con cajas o máquina.</div>
       <div id="cGav">${c.gavetas.map(gavFila).join('')}</div><button class="btn" data-a="c-gav">＋ Agregar gaveta</button>
-      <div class="gav" style="margin-top:12px">${c.gavetas.map(g=>`<button type="button" disabled>${gavSVG(g,0,{alto:90})}${esc(g.n)}</button>`).join('')}</div></div>
-    <div class="card"><b style="font-size:16px">Áreas (spare)</b><div id="cAr" style="margin-top:10px">${c.areas.map(arFila).join('')}</div><button class="btn" data-a="c-ar">＋ Agregar área</button></div>
+      <div class="gav" style="margin-top:12px">${c.gavetas.map(g=>`<button type="button" disabled>${gavSVG(g,{alto:90})}${esc(g.n)}</button>`).join('')}</div></div>
     <div class="card"><b style="font-size:16px">Categorías</b> <span class="faint" style="font-size:13px">(una por renglón)</span><textarea id="cCat">${esc(c.categorias.join('\n'))}</textarea></div>
     <div class="card"><b style="font-size:16px">Líneas</b> <span class="faint" style="font-size:13px">(una por renglón)</span><textarea id="cLin" style="min-height:110px">${esc(c.lineas.join('\n'))}</textarea></div>
     <div class="card row2"><button class="btn dk" data-a="c-ok">Guardar configuración</button><a class="btn" href="/admin/#usuarios" style="text-decoration:none">👥 Usuarios y niveles ›</a>
       <span class="faint" style="font-size:12.5px">Retirar: cualquiera · Agregar / editar: técnico o más · Eliminar y configuración: admin</span></div></div>`;
 }
-const gavFila = g => `<div class="gl" data-gid="${esc(g.id)}"><input value="${esc(g.n)}" data-k="n" placeholder="Nombre"><select data-k="tipo"><option value="alta" ${g.tipo!=='reja'?'selected':''}>Alta gris</option><option value="reja" ${g.tipo==='reja'?'selected':''}>Reja</option></select><input type="number" min="1" max="12" value="${g.niveles}" data-k="niveles" title="Niveles"><button class="xdel" data-del-fila>✕</button></div>`;
-const arFila = a => `<div class="al" data-aid="${esc(a.id)}"><input value="${esc(a.n)}" data-k="n" placeholder="Nombre del área"><input type="color" value="${esc(a.c)}" data-k="c"><button class="xdel" data-del-fila>✕</button></div>`;
+const gavFila = g => `<div class="gl" data-gid="${esc(g.id)}"><input value="${esc(g.n)}" data-k="n" placeholder="Nombre"><select data-k="tipo">${Object.entries(TIPO_GAV).map(([k,t])=>`<option value="${k}" ${g.tipo===k?'selected':''}>${t}</option>`).join('')}</select><button class="xdel" data-del-fila>✕</button></div>`;
 
 async function pintar(){
   document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on', b.dataset.v===vista));
@@ -135,17 +183,18 @@ function hoja(html, onClick){
 }
 function verItem(id){
   const it = S.items.find(x=>x.id===id); if(!it) return toast('Ese material ya no existe.');
-  const a = area(it.area), g = gav(it.gaveta);
-  const el = hoja(`<div class="sub" style="color:${a.c};font-weight:800">${esc(a.n)}</div><h2>${esc(it.desc)}</h2>
-    <div class="det"><span>No. de parte</span><b>${esc(it.pn)}${it.auto?' <small class="faint">(interno)</small>':''}</b>${it.sn?`<span>SN</span><b>${esc(it.sn)}</b>`:''}
+  const g = gav(it.gaveta);
+  const el = hoja(`${it.foto?`<img class="fgr" src="${fotoUrl(it.foto)}" alt="" data-zoom>`:''}<div class="sub" style="color:${colItem(it)};font-weight:800">${esc((it.lineas||[]).join(' · ')||'Sin línea')}</div><h2>${esc(it.desc)}</h2>
+    <div class="det"><span>No. de parte</span><b>${esc(it.pn)}${it.auto?' <small class="faint">(interno)</small>':''}</b>
       <span>Cantidad</span><b style="font-size:22px">${it.cant} pzas ${bajo(it)?'<span class="bajo">BAJO</span>':''}</b>${it.min?`<span>Mínimo</span><b>${it.min}</b>`:''}
       <span>Categoría</span><b>${esc(it.cat||'—')}</b><span>Línea</span><b>${esc((it.lineas||[]).join(', ')||'—')}</b>
       <span>Marca</span><b>${esc(it.marca||'—')}</b><span>Equipo</span><b>${esc(it.equipo||'—')}</b><span>Dónde</span><b>${esc(lugarTxt(it)||'—')}</b>
-      ${it.notas?`<span>Notas</span><b style="font-weight:500">${esc(it.notas)}</b>`:''}<span>Último cambio</span><b style="font-weight:500">${esc(it.por)} · ${fecha(it.act)}</b></div>
-    ${g?`<div style="text-align:center;margin:6px 0 4px">${gavSVG(g, it.nivel, {alto:150})}</div>`:''}
+<span>Último cambio</span><b style="font-weight:500">${esc(it.por)} · ${fecha(it.act)}</b></div>
+    ${g?`<div style="text-align:center;margin:6px 0 4px">${gavSVG(g, {alto:120})}<div class="faint" style="font-size:13px">${esc(g.n)}</div></div>`:''}
     <div class="acts" style="flex-wrap:wrap"><button class="ok" data-b="retiro">− Retirar</button>${S.permisos.editar?'<button data-b="entrada">＋ Entrada</button>':''}</div>
     <div class="acts" style="margin-top:8px;flex-wrap:wrap">${S.permisos.editar?'<button data-b="editar">✎ Editar</button>':''}<button data-b="hist">Historial</button>${S.permisos.admin?'<button data-b="eliminar" style="color:#C2292E">Eliminar</button>':''}</div>
     <div id="hItem"></div><div class="acts"><button data-x>Cerrar</button></div>`, async (e, el) => {
+    if(e.target.closest('[data-zoom]')) return verFoto(fotoUrl(it.foto));
     const b = e.target.closest('[data-b]'); if(!b) return;
     if(b.dataset.b==='retiro'){ el.remove(); formCant(it, 'retiro'); }
     if(b.dataset.b==='entrada'){ el.remove(); formCant(it, 'entrada'); }
@@ -173,59 +222,69 @@ function formCant(it, tipo){
   });
   el.querySelector('#fc').select();
 }
+const porCodigo = v => { const c = norm(v).replace(/\s+/g,''); return S.items.find(i => norm(i.pn).replace(/\s+/g,'') === c); };
 function elegir(titulo, cb){
-  const el = hoja(`<h2>${esc(titulo)}</h2><div class="sub">Busca el material</div><div class="q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="eq" placeholder="Número de parte, SN, descripción…" autocomplete="off"></div>
-    <div class="lst" id="el" style="margin-top:10px"></div><div class="acts"><button data-x>Cancelar</button></div>`, (e, el) => { const t = e.target.closest('[data-it]'); if(t){ el.remove(); cb(S.items.find(x=>x.id===t.dataset.it)); } });
+  const el = hoja(`<h2>${esc(titulo)}</h2><div class="sub">Escanea la etiqueta o busca el material</div>${caja('eq', 'Número de parte, descripción…')}
+    <div class="lst" id="el" style="margin-top:10px"></div><div class="acts"><button data-x>Cancelar</button></div>`, async (e, el) => {
+      if(e.target.closest('[data-a="scan"]')){ const v = await escanear({titulo}); if(!v) return; const x = porCodigo(v);
+        if(x){ el.remove(); return cb(x); } el.querySelector('#eq').value = v; pint(); return toast('No hay un número de parte igual; revisa la lista'); }
+      const t = e.target.closest('[data-it]'); if(t){ el.remove(); cb(S.items.find(x=>x.id===t.dataset.it)); } });
   const pint = () => { const q = norm(el.querySelector('#eq').value).split(/\s+/).filter(Boolean);
-    el.querySelector('#el').innerHTML = S.items.filter(it => q.every(t => norm([it.pn,it.sn,it.desc,it.marca,it.cat].join(' ')).includes(t))).slice(0,40).map(itemHTML).join('') || '<div class="empty">Nada coincide.</div>'; };
+    el.querySelector('#el').innerHTML = S.items.filter(it => q.every(t => norm([it.pn,it.desc,it.marca,it.cat].join(' ')).includes(t))).slice(0,40).map(itemHTML).join('') || '<div class="empty">Nada coincide.</div>'; };
   el.querySelector('#eq').addEventListener('input', pint); pint(); el.querySelector('#eq').focus();
 }
 function formItem(it){
-  const nuevo = !it, v = it || {area: F.area || S.config.areas[0]?.id, lineas: F.linea?[F.linea]:[], gaveta: S.config.gavetas[0]?.id, nivel:0, cant:1, min:0};
-  let gSel = v.gaveta, nSel = v.nivel || 0, aSel = v.area, lSel = new Set(v.lineas||[]);
-  const gavHTML = () => S.config.gavetas.map(g=>`<button type="button" data-g="${esc(g.id)}" class="${g.id===gSel?'on':''}">${gavSVG(g, g.id===gSel?nSel:0, {alto:110})}${esc(g.n)}</button>`).join('');
+  const nuevo = !it, v = it || {lineas: F.linea?[F.linea]:[], gaveta: F.gaveta || S.config.gavetas[0]?.id, cant:1, min:0};
+  let gSel = v.gaveta, lSel = new Set(v.lineas||[]), foto = v.foto || '', fotoData = '';
+  const gavHTML = () => S.config.gavetas.map(g=>`<button type="button" data-g="${esc(g.id)}" class="${g.id===gSel?'on':''}">${gavSVG(g,{alto:96})}${esc(g.n)}</button>`).join('');
+  const fotoHTML = () => (fotoData || foto) ? `<div class="fprev"><img src="${fotoData || fotoUrl(foto)}" alt=""><button type="button" data-qf>Quitar foto</button></div>` : '';
   const el = hoja(`<h2>${nuevo?'Agregar material':'Editar material'}</h2><div class="sub">${nuevo?'Si no tiene número de parte, déjalo vacío y se genera uno interno (AUT-00001…).':esc(v.pn)}</div>
-    <label>Área</label><div class="pick" id="fa">${S.config.areas.map(a=>`<button type="button" data-a2="${esc(a.id)}" class="${a.id===aSel?'on':''}">${esc(a.n)}</button>`).join('')}</div>
-    <div class="g2"><div><label>No. de parte</label><input id="i_pn" value="${esc(nuevo?'':v.pn)}" placeholder="Vacío = automático" autocapitalize="characters"></div><div><label>SN (opcional)</label><input id="i_sn" value="${esc(v.sn||'')}"></div></div>
+    <label>Foto (opcional)</label><div id="ff">${fotoHTML()}</div>
+    <div class="row2"><label class="btn fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" hidden data-fin></label><label class="btn fbtn">🖼 Galería<input type="file" accept="image/*" hidden data-fin></label></div>
+    <label>No. de parte</label><div class="q"><input id="i_pn" value="${esc(nuevo?'':v.pn)}" placeholder="Vacío = automático" autocapitalize="characters" style="padding-left:14px"><button class="scan" type="button" data-scanpn aria-label="Escanear">${ESC_IC}</button></div>
     <label>Descripción</label><input id="i_desc" value="${esc(v.desc||'')}" placeholder="Qué es: ej. Sensor fotoeléctrico M18">
     <div class="g2">${nuevo?`<div><label>Cantidad</label><input id="i_cant" type="number" min="0" value="${v.cant}" inputmode="numeric"></div>`:''}<div><label>Mínimo (aviso)</label><input id="i_min" type="number" min="0" value="${v.min||0}" inputmode="numeric"></div></div>
     <label>Categoría</label><select id="i_cat"><option value="">— Elige —</option>${S.config.categorias.map(c=>`<option ${c===v.cat?'selected':''}>${esc(c)}</option>`).join('')}</select>
-    <label>Línea(s)</label><div class="pick" id="fli">${S.config.lineas.map(l=>`<button type="button" data-li="${esc(l)}" class="${lSel.has(l)?'on':''}">${esc(l)}</button>`).join('')}</div>
+    <label>Línea(s) <span style="text-transform:none;letter-spacing:0;font-weight:600">(puedes elegir varias)</span></label><div class="pick" id="fli">${S.config.lineas.map(l=>`<button type="button" data-li="${esc(l)}" class="${lSel.has(l)?'on':''}">${esc(l)}</button>`).join('')}</div>
     <div class="g2"><div><label>Marca</label><input id="i_marca" value="${esc(v.marca||'')}"></div><div><label>Equipo</label><input id="i_equipo" value="${esc(v.equipo||'')}" placeholder="Dónde se usa"></div></div>
-    <label>¿En qué gaveta? <span style="text-transform:none;letter-spacing:0;font-weight:600">(toca el cajón o repisa)</span></label><div class="gav" id="fg">${gavHTML()}</div>
-    <label>Lugar dentro (bin, caja, bolsa…)</label><input id="i_lugar" value="${esc(v.lugar||'')}" placeholder="Ej. bin azul 3, caja de pogos">
-    <label>Notas</label><textarea id="i_notas">${esc(v.notas||'')}</textarea>
+    <label>¿Dónde se guarda?</label><div class="gav" id="fg">${gavHTML()}</div>
+    <label>Lugar dentro (caja, bin, bolsa…)</label><input id="i_lugar" value="${esc(v.lugar||'')}" placeholder="Ej. caja azul, bolsa de pogos">
     <div class="err" id="fe"></div><div class="acts"><button data-x>Cancelar</button><button class="ok" id="fok">${nuevo?'Agregar':'Guardar'}</button></div>`, async (e, el) => {
-    const a = e.target.closest('[data-a2]'); if(a){ aSel = a.dataset.a2; el.querySelectorAll('[data-a2]').forEach(x=>x.classList.toggle('on', x===a)); return; }
     const li = e.target.closest('[data-li]'); if(li){ li.classList.toggle('on'); lSel[li.classList.contains('on')?'add':'delete'](li.dataset.li); return; }
-    const n = e.target.closest('[data-niv]'), g = e.target.closest('[data-g]');
-    if(g){ const nuevoG = g.dataset.g !== gSel; gSel = g.dataset.g; nSel = n ? +n.dataset.niv : (nuevoG ? 0 : nSel); el.querySelector('#fg').innerHTML = gavHTML(); return; }
+    const g = e.target.closest('[data-g]'); if(g){ gSel = g.dataset.g; el.querySelector('#fg').innerHTML = gavHTML(); return; }
+    if(e.target.closest('[data-qf]')){ foto = ''; fotoData = ''; el.querySelector('#ff').innerHTML = ''; return; }
+    if(e.target.closest('[data-scanpn]')){ const c = await escanear({titulo:'Escanear número de parte'}); if(c) el.querySelector('#i_pn').value = c.toUpperCase(); return; }
     if(e.target.id === 'fok'){
       const val = k => el.querySelector('#i_'+k)?.value;
-      const datos = {pn: val('pn'), sn: val('sn'), desc: val('desc'), min: +val('min')||0, cat: val('cat'), area: aSel, lineas: [...lSel], marca: val('marca'), equipo: val('equipo'), gaveta: gSel, nivel: nSel, lugar: val('lugar'), notas: val('notas')};
+      const datos = {pn: val('pn'), desc: val('desc'), min: +val('min')||0, cat: val('cat'), lineas: [...lSel], marca: val('marca'), equipo: val('equipo'), gaveta: gSel, lugar: val('lugar'), foto};
       if(!datos.desc.trim()) return el.querySelector('#fe').textContent = 'Escribe la descripción.';
-      e.target.disabled = true;
+      const b = e.target; b.disabled = true;
       try{
+        if(fotoData){ b.textContent = 'Subiendo foto…'; datos.foto = await subirFoto(fotoData); }
+        b.textContent = 'Guardando…';
         if(nuevo){ const r = await op({op:'alta', item: {...datos, cant: +val('cant')||0}}); toast(`Agregado: ${r.item.pn}`); }
         else { await op({op:'editar', id: it.id, cambios: datos}); toast('Guardado'); }
         el.remove(); await refrescar();
-      }catch(err){ el.querySelector('#fe').textContent = err.message; e.target.disabled = false; }
+      }catch(err){ el.querySelector('#fe').textContent = err.message; b.disabled = false; b.textContent = nuevo?'Agregar':'Guardar'; }
     }
   });
+  el.querySelectorAll('[data-fin]').forEach(inp => inp.addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+    try{ fotoData = await comprimir(f); el.querySelector('#ff').innerHTML = fotoHTML(); }catch(err){ el.querySelector('#fe').textContent = 'No se pudo leer la foto.'; }
+  }));
 }
 function formLote(){
-  let gSel = '', nSel = 0;
+  let gSel = '';
   const el = hoja(`<h2>Editar ${lote.size} materiales</h2><div class="sub">Solo se cambia lo que elijas; lo demás se queda igual.</div>
-    <label>Área</label><select id="l_area"><option value="">— Sin cambio —</option>${S.config.areas.map(a=>`<option value="${esc(a.id)}">${esc(a.n)}</option>`).join('')}</select>
     <label>Categoría</label><select id="l_cat"><option value="">— Sin cambio —</option>${S.config.categorias.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
-    <label>Línea(s)</label><select id="l_lin"><option value="">— Sin cambio —</option>${S.config.lineas.map(l=>`<option>${esc(l)}</option>`).join('')}</select>
-    <label>Gaveta</label><div class="gav" id="lg">${S.config.gavetas.map(g=>`<button type="button" data-g="${esc(g.id)}">${gavSVG(g,0,{alto:90})}${esc(g.n)}</button>`).join('')}</div>
+    <label>Línea(s)</label><div class="pick" id="l_lin">${S.config.lineas.map(l=>`<button type="button" data-ll="${esc(l)}">${esc(l)}</button>`).join('')}</div>
+    <label>¿Dónde se guarda?</label><div class="gav" id="lg">${S.config.gavetas.map(g=>`<button type="button" data-g="${esc(g.id)}">${gavSVG(g,{alto:80})}${esc(g.n)}</button>`).join('')}</div>
     <div class="err" id="fe"></div><div class="acts"><button data-x>Cancelar</button><button class="ok" id="fok">Aplicar</button></div>`, async (e, el) => {
-    const g = e.target.closest('[data-g]'); if(g){ const n = e.target.closest('[data-niv]'); gSel = g.dataset.g; nSel = n ? +n.dataset.niv : 0;
-      el.querySelector('#lg').innerHTML = S.config.gavetas.map(x=>`<button type="button" data-g="${esc(x.id)}" class="${x.id===gSel?'on':''}">${gavSVG(x, x.id===gSel?nSel:0, {alto:90})}${esc(x.n)}</button>`).join(''); return; }
+    const ll = e.target.closest('[data-ll]'); if(ll){ ll.classList.toggle('on'); return; }
+    const g = e.target.closest('[data-g]'); if(g){ gSel = gSel === g.dataset.g ? '' : g.dataset.g; el.querySelectorAll('[data-g]').forEach(x=>x.classList.toggle('on', x.dataset.g===gSel)); return; }
     if(e.target.id === 'fok'){
-      const c = {}; const a = el.querySelector('#l_area').value, ca = el.querySelector('#l_cat').value, li = el.querySelector('#l_lin').value;
-      if(a) c.area = a; if(ca) c.cat = ca; if(li) c.lineas = [li]; if(gSel){ c.gaveta = gSel; c.nivel = nSel; }
+      const c = {}; const ca = el.querySelector('#l_cat').value, li = [...el.querySelectorAll('[data-ll].on')].map(x=>x.dataset.ll);
+      if(ca) c.cat = ca; if(li.length) c.lineas = li; if(gSel) c.gaveta = gSel;
       if(!Object.keys(c).length) return el.querySelector('#fe').textContent = 'Elige al menos un cambio.';
       try{ const r = await op({op:'lote', ids:[...lote], cambios:c}); el.remove(); lote = null; toast(`${r.n} actualizados`); await refrescar(); }catch(err){ el.querySelector('#fe').textContent = err.message; }
     }
@@ -242,7 +301,7 @@ function csv(nombre, filas){
 async function refrescar(){ await cargar(); MOVS = null; pintar(); }
 let tq, tt;
 document.addEventListener('input', e => {
-  if(e.target.id === 'qq'){ F.q = e.target.value; clearTimeout(tq); tq = setTimeout(()=>{ const pos = e.target.selectionStart; if(vista==='inicio' && F.q) vista = 'buscar'; pintar().then(()=>{ const i = $('qq'); if(i){ i.focus(); i.setSelectionRange(pos,pos); } }); }, 200);
+  if(e.target.id === 'qq'){ F.q = e.target.value; clearTimeout(tq); tq = setTimeout(()=>{ const pos = e.target.selectionStart; if(vista==='inicio' && F.q){ vista = 'buscar'; modoBusq = 'lista'; } pintar().then(()=>{ const i = $('qq'); if(i){ i.focus(); i.setSelectionRange(pos,pos); } }); }, 200);
     clearTimeout(tt); tt = setTimeout(()=>{ if(F.q.trim()) track('busqueda', {q: F.q.trim(), n: filtrar(S.items).length, ruta:'inventario'}); }, 1500); }
   if(e.target.id === 'mq'){ MF.q = e.target.value; clearTimeout(tq); tq = setTimeout(()=>{ pintar().then(()=>{ const i = $('mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 250); }
 });
@@ -253,7 +312,9 @@ document.addEventListener('change', e => {
 $('seg').onclick = e => { const b = e.target.closest('[data-v]'); if(b){ vista = b.dataset.v; lote = null; pintar(); track('vista', {ruta:'inventario/'+vista, titulo:'Inventario · '+b.textContent.trim()}); } };
 $('out').addEventListener('click', async e => {
   const v = e.target.closest('[data-v]'); if(v){ vista = v.dataset.v; return pintar(); }
-  const ar = e.target.closest('[data-area]'); if(ar){ F.area = ar.dataset.area; return pintar(); }
+  const ln = e.target.closest('[data-linea]'); if(ln){ F.linea = ln.dataset.linea; return pintar(); }
+  const mo = e.target.closest('[data-modo]'); if(mo){ modoBusq = mo.dataset.modo; return pintar(); }
+  const gf = e.target.closest('[data-gf]'); if(gf){ gavFoto = gf.dataset.gf; pintar(); return window.scrollTo(0,0); }
   const it = e.target.closest('[data-it]');
   if(it){ if(lote){ lote.has(it.dataset.it) ? lote.delete(it.dataset.it) : lote.add(it.dataset.it); return pintar(); } return verItem(it.dataset.it); }
   const a = e.target.closest('[data-a]'); if(!a) return;
@@ -262,21 +323,20 @@ $('out').addEventListener('click', async e => {
   if(k==='retiro') elegir('¿Qué vas a retirar?', x => formCant(x, 'retiro'));
   if(k==='entrada') elegir('¿A qué le das entrada?', x => formCant(x, 'entrada'));
   if(k==='deshacer'){ if(!confirm('¿Deshacer tu último retiro? Las piezas regresan al inventario.')) return; try{ const r = await op({op:'deshacer'}); toast(`Regresaron ${r.mov.delta} de ${r.item.desc}`); await refrescar(); }catch(err){ alert(err.message); } }
-  if(k==='csv') csv(`inventario-${new Date().toISOString().slice(0,10)}.csv`, [['No. de parte','SN','Descripción','Cantidad','Mínimo','Categoría','Área','Línea(s)','Marca','Equipo','Gaveta','Nivel','Lugar','Notas','Último cambio','Por'],
-    ...filtrar(S.items).map(i=>[i.pn,i.sn,i.desc,i.cant,i.min,i.cat,area(i.area).n,(i.lineas||[]).join(' / '),i.marca,i.equipo,gav(i.gaveta)?.n||'',i.nivel||'',i.lugar,i.notas,i.act,i.por])]);
+  if(k==='csv') csv(`inventario-${new Date().toISOString().slice(0,10)}.csv`, [['No. de parte','Descripción','Cantidad','Mínimo','Categoría','Línea(s)','Marca','Equipo','Gaveta','Lugar','Foto','Último cambio','Por'],
+    ...filtrar(S.items).map(i=>[i.pn,i.desc,i.cant,i.min,i.cat,(i.lineas||[]).join(' / '),i.marca,i.equipo,gav(i.gaveta)?.n||'',i.lugar,i.foto?'sí':'',i.act,i.por])]);
   if(k==='csv-mov') csv(`movimientos-${new Date().toISOString().slice(0,10)}.csv`, [['Fecha','Tipo','No. de parte','Descripción','Cambio','Antes','Después','Persona','No. control','Destino','Nota'],
     ...MOVS.map(m=>[m.fecha,(MV[m.tipo]||[,m.tipo])[1],m.pn,m.desc,m.delta,m.antes,m.despues,m.nombre,m.num,m.destino,m.nota])]);
   if(k==='adm-ok'){ try{ const r = await fetch('/api/admin-login', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({num: S.permisos.num, pin: $('admPin').value})}); const j = await r.json(); if(!r.ok) throw new Error(j.error||'Error'); await refrescar(); toast('Modo admin activo'); }catch(err){ $('admErr').textContent = err.message; } return; }
   if(k==='lote'){ lote = lote ? null : new Set(); pintar(); }
   if(k==='lote-todo'){ filtrar(S.items).forEach(i=>lote.add(i.id)); pintar(); }
   if(k==='lote-ok') formLote();
-  if(k==='c-gav') $('cGav').insertAdjacentHTML('beforeend', gavFila({id:'', n:'', tipo:'alta', niveles:4}));
-  if(k==='c-ar') $('cAr').insertAdjacentHTML('beforeend', arFila({id:'', n:'', c:'#5E6B78'}));
+  if(k==='c-gav') $('cGav').insertAdjacentHTML('beforeend', gavFila({id:'', n:'', tipo:'piso'}));
+  if(k==='scan'){ const v = await escanear({}); if(!v) return; const x = porCodigo(v); F.q = v; if(vista==='inicio') vista = 'buscar'; modoBusq = 'lista'; await pintar(); if(x) verItem(x.id); else toast('Ningún número de parte igual; busqué el texto'); return; }
   if(k==='c-ok'){
     const lineas = t => t.split('\n').map(x=>x.trim()).filter(Boolean);
     const config = {
-      gavetas: [...document.querySelectorAll('#cGav .gl')].map(r=>({id: r.dataset.gid || norm(r.querySelector('[data-k=n]').value).replace(/[^a-z0-9]+/g,'-'), n: r.querySelector('[data-k=n]').value, tipo: r.querySelector('[data-k=tipo]').value, niveles: +r.querySelector('[data-k=niveles]').value})),
-      areas: [...document.querySelectorAll('#cAr .al')].map(r=>({id: r.dataset.aid || norm(r.querySelector('[data-k=n]').value).replace(/[^a-z0-9]+/g,'-'), n: r.querySelector('[data-k=n]').value, c: r.querySelector('[data-k=c]').value})),
+      gavetas: [...document.querySelectorAll('#cGav .gl')].map(r=>({id: r.dataset.gid || norm(r.querySelector('[data-k=n]').value).replace(/[^a-z0-9]+/g,'-'), n: r.querySelector('[data-k=n]').value, tipo: r.querySelector('[data-k=tipo]').value})),
       categorias: lineas($('cCat').value), lineas: lineas($('cLin').value)};
     try{ await api('config', {method:'POST', body: JSON.stringify({config})}); toast('Configuración guardada'); await refrescar(); }catch(err){ alert(err.message); }
   }

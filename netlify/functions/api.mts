@@ -96,6 +96,9 @@ export default async (req: Request, context: Context) => {
   if (r0 === "inv") return inv(req, ruta.split("/").slice(1), s, admin);   // inventario de spare (netlify/lib/inv.mts)
 
   if (r0 === "yo") {
+    // si al usuario lo borraron o desactivaron, su sesión deja de servir
+    const u = await getUsuario(s.num);
+    if (!u || !u.activo) { context.cookies.delete({ name: COOKIE, path: "/" }); return err("Tu acceso ya no está activo.", 401); }
     const cfg = (await st("config").get("procNiveles", { type: "json" })) || {};
     return json({ yo: { num: s.num, nombre: s.nombre, nivel: s.nivel, rango: rango(s.nivel), adm: admin }, procNiveles: cfg });
   }
@@ -321,6 +324,21 @@ export default async (req: Request, context: Context) => {
       const d = await body();
       const num = limpio(d.num, 20).replace(/\s/g, "");
       if (!/^\w{3,20}$/.test(num)) return err("Número de control inválido.");
+      if (d.borrar) {   // quitar a alguien (su actividad y aportaciones se quedan con su nombre)
+        if (num === s.num) return err("No te puedes borrar a ti mismo.");
+        await store.delete(num);
+        return json({ ok: true });
+      }
+      if (d.nuevoNum !== undefined && limpio(d.nuevoNum, 20).replace(/\s/g, "") !== num) {   // corregir el número de control
+        const nuevo = limpio(d.nuevoNum, 20).replace(/\s/g, "");
+        if (!/^\w{3,20}$/.test(nuevo)) return err("El número nuevo no es válido.");
+        if (num === s.num) return err("Tu propio número no se puede cambiar desde aquí.");
+        if (await store.get(nuevo)) return err("Ese número ya está dado de alta.");
+        const u0 = await getUsuario(num); if (!u0) return err("No existe.", 404);
+        await store.setJSON(nuevo, { ...u0, num: nuevo });
+        await store.delete(num);
+        return json({ ok: true, usuario: publico({ ...u0, num: nuevo }) });
+      }
       const prev = await getUsuario(num);
       const u: Usuario = prev || { num, nombre: "", nivel: "operador", activo: true, creado: new Date().toISOString() };
       if (d.nombre !== undefined) u.nombre = limpio(d.nombre, 80) || u.nombre || num;

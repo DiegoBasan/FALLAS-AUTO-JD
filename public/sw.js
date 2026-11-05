@@ -6,10 +6,10 @@
    - Páginas: red primero, pero si tarda más de 2.5 s o no hay red, sale lo guardado.
    - Al volver la señal, la app avisa ('refrescar') y se vuelve a bajar lo que haya cambiado o falte.
    - La API (/api), el login y el panel admin nunca se guardan, salvo las fotos (/api/foto) y las instrucciones que ya viste. */
-const CACHE = 'jdf-v8';
+const CACHE = 'jdf-v9';
 const FOTOS = 'jdf-fotos';   // fotos de instrucciones/aportaciones (/api/foto/<id>): no cambian, se guardan al verlas
 const FONTS = 'jdf-fonts';
-const CORE = ['/', '/buscador-kasalis/', '/fallas-linea/', '/docs/', '/cuenta/', '/instrucciones/', '/instrucciones/app.js', '/shared/instr.js',
+const CORE = ['/', '/buscador-kasalis/', '/fallas-linea/', '/docs/', '/cuenta/', '/instrucciones/', '/instrucciones/app.js', '/shared/instr.js', '/inventario/', '/inventario/app.js', '/shared/escaner.js', '/vendor/zxing-0.21.3.min.js',
   '/shared/ui.css', '/shared/theme.js', '/shared/app.js', '/shared/cuenta.js', '/shared/txt.js', '/shared/flow.js', '/shared/procs.js',
   '/shared/kasalis.js', '/shared/kasalis-codes.js', '/shared/explica.js',
   '/buscador-kasalis/app.js', '/buscador-kasalis/data/fallas.js', '/buscador-kasalis/data/procedimientos.js', '/buscador-kasalis/data/imagenes.js',

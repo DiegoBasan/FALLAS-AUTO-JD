@@ -30,7 +30,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
 ## Marcas de fuente en los textos (shared/txt.js)
 `{{…}}` Claude (morado, sin confirmar) · `[[d:…]]` Diego · `[[m:…]]` Téc. M. · `[[l:…]]` Téc. L. ·
 `[[j:…]]` entrenador Kasalis · `[[e:…]]` equipo (chats) · sin marca = manual/documentación.
-Se muestran como un puntito con la inicial al final del dato; leyenda al pie de cada pantalla.
+Se muestran como un puntito con la inicial al final del dato (la leyenda del pie se quitó; `LEYENDA` quedó vacía).
 
 ## Colores por máquina
 Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` · Hornos `#8A8A90` · General `#5E6B78`.
@@ -41,6 +41,7 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 - `netlify/functions/api.mts` (todo bajo `/api/*`): login con número, admin-login (contraseña del panel; la primera vez se crea), logout, cambiar contraseña del panel, aportaciones (crear, listar por `ref`, mías, de un usuario; admin: aprobar, rechazar, borrar), fotos, actividad (vistas y búsquedas por usuario y por día), stats, usuarios, accesos por nivel, tema ntfy.
 - `netlify/lib/auth.mts` (HMAC + PBKDF2, Web Crypto) y `netlify/lib/secreto.mts` (llave de sesión y tema ntfy generados por el servidor y guardados en Blobs `config`; nunca en el código).
 - Blobs: `instrucciones` (`<id>` → {app, titulo, desc, bloques:[{t:paso|nota|foto, txt|foto+cap}], num, nombre, estado…}; fotos aparte en `fotos` vía `POST /api/foto`), `usuarios`, `aportaciones` (clave `<ref>/<id>`, ref = `kasalis:<falla>`, `kasalis-p:<guía>`, `linea:<falla>`, `linea-p:<proceso>`), `fotos`, `actividad` (`<YYYY-MM-DD>/<num>`), `config`.
+- Panel → Usuarios: alta, nivel, activar/desactivar, **corregir el número de control** y **quitar** usuarios. `/api/yo` corta la sesión de alguien borrado o desactivado.
 - Admin inicial (Diego) ya activado. Si se perdiera, poner la variable de entorno `ADMIN_NUM` con su número: ese usuario reaparece sin contraseña y la primera que capture en el panel queda. Niveles: operador, tecnico, ingeniero, admin.
 - Cliente: `public/shared/cuenta.js` (sesión, `track`, botón flotante ＋ Aportar, tarjetas de aportación, "Mis aportaciones"). Panel: `public/admin/index.html` (Aportaciones · Actividad · Usuarios · Accesos por nivel · Notificaciones).
 - Notificaciones: push con ntfy (tema en el panel → Notificaciones) y correo con Netlify Forms (formulario oculto `aportacion` en `public/index.html`; activar en Netlify → Notifications).
@@ -60,8 +61,14 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 
 ## Inventario de spare (`/inventario/`)
 - App dentro de JD Fallas (mismo login y usuarios). Front: `public/inventario/index.html` + `app.js`. Servidor: `netlify/lib/inv.mts`, colgado de `api.mts` (`/api/inv/*`).
-- Blobs `inventario`: `doc` = {seq, items} (un documento, escritura con etag + reintentos), `config` = áreas, categorías, líneas, gavetas {id, n, tipo alta|reja, niveles}, `m/<YYYY-MM>/<t>` = movimientos (alta, entrada, retiro, edicion, baja, deshacer, config).
-- Número de parte vacío → interno `AUT-00001…`. Duplicado (mismo PN + SN) se rechaza: usar Entrada.
-- Permisos: retirar = cualquiera; agregar / entrada / editar / lote = técnico o más; eliminar y configuración = admin con contraseña confirmada (`/api/admin-login`, la propia página la pide).
-- Gavetas dibujadas en SVG (`gavSVG`): alta gris de cajones y reja ancha de repisas; se toca el cajón/repisa para ubicar. Pendiente: secciones dentro del cajón (bins/cajas) dibujadas.
-- Ideas: etiquetas QR por material, foto por material, alertas de stock bajo por ntfy, migrar a Netlify DB si crece mucho.
+- Blobs `inventario`: `doc` = {seq, items} (un documento, escritura con etag + reintentos), `config` = categorías, líneas, gavetas {id, n, tipo piso|reja|maquina}, `m/<YYYY-MM>/<t>` = movimientos, `importado` = marca de la importación única del Excel anterior (51 materiales, 5-nov-2026; los datos no están en el repo).
+- Material: No. de parte (único; vacío → `AUT-00001…`), descripción, cantidad, mínimo, categoría, línea(s) (varias), marca, equipo, gaveta, lugar dentro, foto. **Sin área, sin SN y sin notas** (se quitaron a pedido de Diego).
+- Gavetas dibujadas (no interactivas, solo para reconocerlas): **Gaveta Piso** (gris alta, 2 puertas), **Gaveta de reja** (3 niveles con cajas), **Kasalis Scorpion** (máquina). Se elige una u otra al agregar.
+- Foto por material (cámara o galería), comprimida en el celular a 1024 px JPEG 70 % y subida a `/api/foto`.
+- Búsqueda: texto, **escáner** de código de barras/QR (`shared/escaner.js`: lector nativo si existe, si no ZXing en `public/vendor/`, MIT) y **por foto** (eliges gaveta → mosaico de fotos → tocas y abre el detalle). El escáner también sirve al retirar / dar entrada y para capturar el No. de parte.
+- Permisos: retirar = cualquiera; agregar / entrada / editar / lote = técnico o más; eliminar y configuración = admin con contraseña confirmada.
+- Pruebas locales: `env -u NODE_OPTIONS INV_SIN_ETAG=1 ADMIN_NUM=9999 npx netlify-cli dev --offline` (el simulador local de Blobs no respeta `onlyIfMatch`; la puerta edge no carga por el certificado del proxy, la API sí).
+
+## Créditos de Netlify (plan gratis: 300 al mes, si se acaban el sitio se pausa)
+- Cada deploy a producción = **15 créditos** → juntar cambios y publicar una sola vez; probar antes con `netlify dev`.
+- Ancho de banda 20 créditos/GB · cómputo 10 créditos/GB-hora · 2 créditos por cada 10,000 peticiones · formularios gratis.

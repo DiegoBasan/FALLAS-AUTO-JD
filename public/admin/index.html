@@ -166,11 +166,11 @@ async function vUsuarios(){
       <select id="nNiv">${Object.entries(NIV).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="btn dk" id="nOk">Agregar</button></div>
       <div class="faint" style="font-size:12.5px;margin-top:8px">Entran solo con su número de control. Solo el panel admin pide contraseña.</div></div>
     <div class="card tbl"><table><tr><th>Nombre</th><th>No.</th><th>Nivel</th><th>Contraseña panel</th><th>Activo</th><th></th></tr>
-      ${usuarios.map(u=>`<tr data-u="${esc(u.num)}"><td><input class="in" value="${esc(u.nombre)}" data-campo="nombre" style="width:100%;min-width:120px"></td><td class="n">${esc(u.num)}</td>
+      ${usuarios.map(u=>`<tr data-u="${esc(u.num)}"><td><input class="in" value="${esc(u.nombre)}" data-campo="nombre" style="width:100%;min-width:120px"></td><td><input class="in" value="${esc(u.num)}" data-campo="num" inputmode="numeric" style="width:110px" title="Número de control (se puede corregir)"></td>
         <td><select data-campo="nivel">${Object.entries(NIV).map(([k,v])=>`<option value="${k}" ${u.nivel===k?'selected':''}>${v}</option>`).join('')}</select></td>
         <td>${u.nivel!=='admin'?'<span class="faint">No usa</span>':u.tienePin?'Creada':'<span class="faint">Pendiente (primera vez)</span>'}</td>
         <td><input type="checkbox" data-campo="activo" ${u.activo?'checked':''}></td>
-        <td style="white-space:nowrap"><button class="btn" data-guardar>Guardar</button> ${u.tienePin&&u.nivel==='admin'?'<button class="btn" data-reset>Reiniciar contraseña</button>':''}</td></tr>`).join('')}</table></div>`;
+        <td style="white-space:nowrap"><button class="btn" data-guardar>Guardar</button> ${u.tienePin&&u.nivel==='admin'?'<button class="btn" data-reset>Reiniciar contraseña</button>':''} <button class="btn" data-quitar style="color:#C2292E">Quitar</button></td></tr>`).join('')}</table></div>`;
 }
 
 function vNiveles(cfg){
@@ -215,7 +215,15 @@ $('out').addEventListener('click', async e => {
   if(t.id==='nOk'){ try{ await api('usuarios', {method:'POST', body: JSON.stringify({num:$('nNum').value.trim(), nombre:$('nNom').value.trim(), nivel:$('nNiv').value})}); toast('Usuario agregado'); vUsuarios(); }catch(err){ alert(err.message); } return; }
   const row = t.closest('[data-u]');
   if(row && t.matches('[data-guardar]')){ const g = c => row.querySelector(`[data-campo="${c}"]`);
-    try{ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, nombre: g('nombre').value, nivel: g('nivel').value, activo: g('activo').checked})}); toast('Guardado'); }catch(err){ alert(err.message); } return; }
+    try{
+      let num = row.dataset.u; const nuevo = g('num').value.trim();
+      if(nuevo && nuevo !== num){ if(!confirm(`¿Cambiar el número de control ${num} → ${nuevo}? Esa persona entrará con el número nuevo.`)) return;
+        await api('usuarios', {method:'POST', body: JSON.stringify({num, nuevoNum: nuevo})}); num = nuevo; row.dataset.u = nuevo; }
+      await api('usuarios', {method:'POST', body: JSON.stringify({num, nombre: g('nombre').value, nivel: g('nivel').value, activo: g('activo').checked})}); toast('Guardado');
+    }catch(err){ alert(err.message); } return; }
+  if(row && t.matches('[data-quitar]')){ const nom = row.querySelector('[data-campo="nombre"]').value;
+    if(!confirm(`¿Quitar a ${nom} (No. ${row.dataset.u})? Ya no podrá entrar. Sus aportaciones y su actividad se quedan.`)) return;
+    try{ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, borrar: true})}); toast('Usuario quitado'); vUsuarios(); }catch(err){ alert(err.message); } return; }
   if(row && t.matches('[data-reset]') && confirm('¿Reiniciar su contraseña? La próxima vez que entre creará una nueva.')){ await api('usuarios', {method:'POST', body: JSON.stringify({num: row.dataset.u, resetPin: true})}); toast('Contraseña reiniciada'); vUsuarios(); return; }
   if(t.id==='nivOk'){ const cfg = {}; $('out').querySelectorAll('[data-proc]').forEach(s=>cfg[s.dataset.proc] = s.value); await api('config', {method:'POST', body: JSON.stringify({procNiveles: cfg})}); toast('Accesos guardados'); }
 });

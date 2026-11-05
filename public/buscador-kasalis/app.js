@@ -164,12 +164,12 @@ function homeView(){
   const usados = new Set(ESTACIONES.flatMap(e=>e[1]));
   const resto = FALLAS.filter(f=>!usados.has(f.id));
   let h = `${sh('cause','Lo más común',1)}<div class="list top5">${COMUNES.map(byId).filter(Boolean).map(f=>`<div class="row" data-go="f/${f.id}" style="--ic:${colDe(f.id)}"><b class="ic" style="width:36px;height:36px">${icon(f.id)}</b><span>${esc(f.titulo)}<small>${esc(f.codigos.slice(0,4).join(' · '))}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
+  h += `<div class="link" data-go="tools/linea" style="margin-top:10px"><span>🧮 Explicar una línea ARC / VIS / PRE</span><span class="faint">›</span></div>`;
   h += `<hr class="sep">${sh('steps','Por estación',1)}`;
   ESTACIONES.forEach(e=>{ const fs = e[1].map(byId).filter(Boolean); if(fs.length) h += `<h3 class="lb">${dotEst(e)}${esc(e[0])}</h3><div class="modes">${fs.map(card).join('')}</div>`; });
   if(resto.length) h += `<h3 class="lb">${dotEst(estDe(''))}Otras</h3><div class="modes">${resto.map(card).join('')}</div>`;
   h += `<hr class="sep"><div id="instHome"></div>`;
-  h += `<hr class="sep">${sh('tip','Herramientas',1)}<div class="link" data-go="tools/linea"><span>🧮 Explicar una línea ARC / VIS / PRE</span><span class="faint">›</span></div>
-    <div class="link" data-go="guias"><span>📘 Guías del programa (${Object.keys(PROCS).filter(visible).length})</span><span class="faint">›</span></div>
+  h += `<hr class="sep">${sh('tip','Herramientas',1)}<div class="link" data-go="guias"><span>📘 Guías del programa (${Object.keys(PROCS).filter(visible).length})</span><span class="faint">›</span></div>
     <div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>${LEYENDA}`;
   return h;
 }
