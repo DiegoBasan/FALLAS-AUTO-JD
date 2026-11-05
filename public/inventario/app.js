@@ -104,6 +104,9 @@ async function vHistorial(){
 }
 function vConfig(){
   const c = S.config;
+  if(!S.permisos.admin) return `<div class="card" style="max-width:420px"><b style="font-size:16px">Confirma tu contraseña de admin</b><div class="faint" style="font-size:13.5px;margin:6px 0 12px">Para cambiar la configuración o eliminar material.</div>
+    <input id="admPin" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:inherit;font:inherit;font-size:16px;padding:0 12px">
+    <div class="err" id="admErr" style="color:#C2292E;font-size:14px;margin-top:8px"></div><button class="btn dk" data-a="adm-ok" style="margin-top:10px;width:100%;height:48px">Entrar como admin</button></div>`;
   return `<div class="cfg"><div class="card"><b style="font-size:16px">Gavetas</b><div class="faint" style="font-size:13px;margin:4px 0 10px">Tipo: alta (gris, de cajones) o reja (chaparra y ancha). Niveles = cajones o repisas.</div>
       <div id="cGav">${c.gavetas.map(gavFila).join('')}</div><button class="btn" data-a="c-gav">＋ Agregar gaveta</button>
       <div class="gav" style="margin-top:12px">${c.gavetas.map(g=>`<button type="button" disabled>${gavSVG(g,0,{alto:90})}${esc(g.n)}</button>`).join('')}</div></div>
@@ -113,8 +116,8 @@ function vConfig(){
     <div class="card row2"><button class="btn dk" data-a="c-ok">Guardar configuración</button><a class="btn" href="/admin/#usuarios" style="text-decoration:none">👥 Usuarios y niveles ›</a>
       <span class="faint" style="font-size:12.5px">Retirar: cualquiera · Agregar / editar: técnico o más · Eliminar y configuración: admin</span></div></div>`;
 }
-const gavFila = g => `<div class="gl" data-gid="${esc(g.id)}"><input value="${esc(g.n)}" data-k="n" placeholder="Nombre"><select data-k="tipo"><option value="alta" ${g.tipo!=='reja'?'selected':''}>Alta gris</option><option value="reja" ${g.tipo==='reja'?'selected':''}>Reja</option></select><input type="number" min="1" max="12" value="${g.niveles}" data-k="niveles" title="Niveles"><button class="x" data-del-fila>✕</button></div>`;
-const arFila = a => `<div class="al" data-aid="${esc(a.id)}"><input value="${esc(a.n)}" data-k="n" placeholder="Nombre del área"><input type="color" value="${esc(a.c)}" data-k="c"><button class="x" data-del-fila>✕</button></div>`;
+const gavFila = g => `<div class="gl" data-gid="${esc(g.id)}"><input value="${esc(g.n)}" data-k="n" placeholder="Nombre"><select data-k="tipo"><option value="alta" ${g.tipo!=='reja'?'selected':''}>Alta gris</option><option value="reja" ${g.tipo==='reja'?'selected':''}>Reja</option></select><input type="number" min="1" max="12" value="${g.niveles}" data-k="niveles" title="Niveles"><button class="xdel" data-del-fila>✕</button></div>`;
+const arFila = a => `<div class="al" data-aid="${esc(a.id)}"><input value="${esc(a.n)}" data-k="n" placeholder="Nombre del área"><input type="color" value="${esc(a.c)}" data-k="c"><button class="xdel" data-del-fila>✕</button></div>`;
 
 async function pintar(){
   document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on', b.dataset.v===vista));
@@ -122,7 +125,7 @@ async function pintar(){
     $('out').innerHTML = vista==='inicio' ? vInicio() : vista==='buscar' ? vBuscar() : vista==='historial' ? await vHistorial() : vConfig();
   }catch(e){ $('out').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
-async function cargar(){ const r = await api('estado'); S = r; $('segCfg').hidden = !S.permisos.admin; }
+async function cargar(){ const r = await api('estado'); S = r; $('segCfg').hidden = !S.permisos.nivelAdmin; }
 
 /* ---------- hojas (formularios) ---------- */
 function hoja(html, onClick){
@@ -263,6 +266,7 @@ $('out').addEventListener('click', async e => {
     ...filtrar(S.items).map(i=>[i.pn,i.sn,i.desc,i.cant,i.min,i.cat,area(i.area).n,(i.lineas||[]).join(' / '),i.marca,i.equipo,gav(i.gaveta)?.n||'',i.nivel||'',i.lugar,i.notas,i.act,i.por])]);
   if(k==='csv-mov') csv(`movimientos-${new Date().toISOString().slice(0,10)}.csv`, [['Fecha','Tipo','No. de parte','Descripción','Cambio','Antes','Después','Persona','No. control','Destino','Nota'],
     ...MOVS.map(m=>[m.fecha,(MV[m.tipo]||[,m.tipo])[1],m.pn,m.desc,m.delta,m.antes,m.despues,m.nombre,m.num,m.destino,m.nota])]);
+  if(k==='adm-ok'){ try{ const r = await fetch('/api/admin-login', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({num: S.permisos.num, pin: $('admPin').value})}); const j = await r.json(); if(!r.ok) throw new Error(j.error||'Error'); await refrescar(); toast('Modo admin activo'); }catch(err){ $('admErr').textContent = err.message; } return; }
   if(k==='lote'){ lote = lote ? null : new Set(); pintar(); }
   if(k==='lote-todo'){ filtrar(S.items).forEach(i=>lote.add(i.id)); pintar(); }
   if(k==='lote-ok') formLote();

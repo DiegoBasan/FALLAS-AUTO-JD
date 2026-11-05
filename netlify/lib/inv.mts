@@ -92,7 +92,7 @@ export async function inv(req: Request, ruta: string[], s: Sesion, admin: boolea
   try {
     if (a === "estado" && M === "GET") {
       const [{ doc }, config, ultimos] = await Promise.all([leerDoc(), getConfig(), movs({ meses: 2, limite: 15 })]);
-      return json({ config, items: Object.values(doc.items), ultimos, permisos: { editar: puede("tecnico"), admin } });
+      return json({ config, items: Object.values(doc.items), ultimos, permisos: { editar: puede("tecnico"), admin, nivelAdmin: s.nivel === "admin", num: s.num } });
     }
     if (a === "movs" && M === "GET") {
       const u = new URL(req.url);
