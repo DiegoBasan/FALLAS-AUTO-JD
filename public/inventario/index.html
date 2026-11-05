@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Inventario · JD Fallas</title><meta name="theme-color" content="#f2f2f3">
+<link rel="manifest" href="/manifest.webmanifest">
+<script src="/shared/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/ui.css">
+<script src="/shared/app.js" defer></script>
+<style>
+:root{--inv:#12A594}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 120px)}
+.top{display:flex;align-items:center;gap:10px}
+.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.5px}
+.seg{display:flex;gap:4px;background:var(--surface2,rgba(127,127,127,.12));border-radius:14px;padding:4px;margin:12px 0 14px;overflow-x:auto;scrollbar-width:none}
+.seg button{flex:1 0 auto;border:0;background:none;color:var(--ink2);font:inherit;font-weight:700;font-size:14px;padding:9px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.seg svg{width:17px;height:17px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}
+h3.lb{margin:18px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.q{position:relative}
+.q input{width:100%;box-sizing:border-box;height:52px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:inherit;font:inherit;font-size:16px;padding:0 14px 0 44px}
+.q svg{position:absolute;left:14px;top:15px;width:20px;height:20px;color:var(--ink3)}
+.acc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.acc button{border:1.5px solid var(--line);border-radius:20px;padding:14px 8px;background:var(--surface);color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.acc button i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:24px;font-weight:800}
+.acc button b{font-size:15px} .acc button small{font-size:12px;color:var(--ink2)}
+.acc .ag{background:rgba(34,160,107,.08);border-color:rgba(34,160,107,.35)} .acc .ag i{background:#22A06B}
+.acc .re{background:rgba(240,140,0,.08);border-color:rgba(240,140,0,.4)} .acc .re i{background:#F08C00}
+.acc .en{background:rgba(47,107,255,.07);border-color:rgba(47,107,255,.35)} .acc .en i{background:#2F6BFF}
+.undo{width:100%;margin-top:10px;height:46px;border-radius:14px;border:0;background:var(--ink);color:var(--bg);font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
+.cols{display:grid;gap:12px}
+@media(min-width:960px){.cols{grid-template-columns:1.1fr 1fr}}
+.mv{display:flex;gap:10px;padding:10px 2px;border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.mv:first-child{border-top:0}
+.mv .k{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;flex:0 0 auto;font-size:15px}
+.mv .k.alta,.mv .k.entrada,.mv .k.deshacer{background:rgba(34,160,107,.14);color:#17744D}
+.mv .k.retiro,.mv .k.baja{background:rgba(240,140,0,.16);color:#A35B00}
+.mv .k.edicion,.mv .k.config{background:rgba(47,107,255,.12);color:#2F6BFF}
+.mv .x{flex:1;min-width:0} .mv .x b{display:block;font-size:14px} .mv .x span{color:var(--ink2);font-size:12.5px}
+.mv .t{color:var(--ink3);font-size:12px;white-space:nowrap;text-align:right}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}
+.chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:99px;padding:7px 13px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chips button i{width:9px;height:9px;border-radius:50%;background:var(--c,#999)}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:transparent}
+.filt{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filt select{flex:1 1 150px;min-width:0;border:1px solid var(--line);border-radius:12px;padding:9px 10px;font:inherit;font-size:14px;background:var(--surface);color:inherit}
+.lst{display:grid;gap:8px}
+.it{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;cursor:pointer}
+.it .ar{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.it .ar svg{width:22px;height:22px}
+.it b{display:block;font-size:15px;line-height:1.3} .it small{display:block;color:var(--ink2);font-size:12.5px;margin-top:2px}
+.it .pn{font:700 12.5px ui-monospace,Menlo,monospace;color:var(--ink2)}
+.it .q2{text-align:right} .it .q2 b{font-size:22px;letter-spacing:-.5px} .it .q2 span{font-size:11.5px;color:var(--ink3)}
+.bajo{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(229,72,77,.14);color:#C2292E;margin-left:4px;vertical-align:2px}
+.it.sel{outline:2.5px solid var(--inv)}
+.empty{padding:22px;text-align:center;color:var(--ink2)}
+.tblw{overflow-x:auto} table{width:100%;border-collapse:collapse;font-size:13.5px} td,th{padding:9px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:top} th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);border-top:0}
+.btn{border:1.5px solid var(--line);background:none;color:inherit;border-radius:99px;padding:9px 15px;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.btn.dk{background:var(--ink);color:var(--bg);border-color:transparent} .btn.no{color:#C2292E;border-color:rgba(229,72,77,.4)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* hoja */
+.sh{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sh .pp{background:var(--surface);width:min(640px,100%);max-height:94dvh;overflow:auto;border-radius:26px 26px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom))}
+@media(min-width:800px){.sh{align-items:center}.sh .pp{border-radius:26px}}
+.sh h2{margin:0 0 2px;font-size:20px} .sh .sub{color:var(--ink2);font-size:13.5px;margin-bottom:10px}
+.sh label{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);margin:12px 2px 6px}
+.sh input,.sh select,.sh textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:14px;padding:11px 12px;font:inherit;font-size:16px;background:var(--bg);color:inherit}
+.sh textarea{min-height:70px;resize:vertical}
+.sh .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sh .acts{display:flex;gap:10px;margin-top:18px}
+.sh .acts button{flex:1;height:52px;border-radius:99px;border:1.5px solid var(--line);background:none;color:inherit;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer}
+.sh .acts .ok{background:var(--ink);color:var(--bg);border-color:transparent}
+.sh .err{color:#C2292E;font-size:14px;margin-top:10px}
+.pick{display:flex;gap:6px;flex-wrap:wrap}
+.pick button{border:1.5px solid var(--line);background:none;color:inherit;border-radius:99px;padding:8px 12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.pick button.on{background:var(--ink);color:var(--bg);border-color:transparent}
+.gav{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.gav button{border:2px solid var(--line);border-radius:18px;background:var(--bg);color:inherit;padding:10px;cursor:pointer;font:inherit;font-weight:700;font-size:13.5px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.gav button.on{border-color:var(--inv);background:color-mix(in srgb,var(--inv) 8%,transparent)}
+.gav svg{height:96px;width:auto}
+.niv rect.n{cursor:pointer} .niv rect.n:hover{opacity:.85}
+.qty{display:flex;align-items:center;gap:10px}
+.qty button{width:52px;height:52px;border-radius:16px;border:1.5px solid var(--line);background:var(--bg);color:inherit;font-size:26px;font-weight:800;cursor:pointer}
+.qty input{text-align:center;font-size:24px;font-weight:800;max-width:120px}
+.det{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14.5px;margin:10px 0}
+.det span{color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 110px);transform:translateX(-50%);z-index:90;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 10px 28px rgba(0,0,0,.25)}
+.cfg textarea{width:100%;box-sizing:border-box;min-height:150px;border:1px solid var(--line);border-radius:12px;padding:10px;font:14px/1.5 Inter,system-ui;background:var(--bg);color:inherit}
+.cfg .gl{display:grid;grid-template-columns:1fr 120px 90px 36px;gap:6px;margin-bottom:6px}
+.cfg .gl input,.cfg .gl select{border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:14px;background:var(--bg);color:inherit;min-width:0}
+.cfg .al{display:grid;grid-template-columns:1fr 46px 36px;gap:6px;margin-bottom:6px}
+.cfg .al input{border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:14px;background:var(--bg);color:inherit;min-width:0}
+.cfg .al input[type=color]{padding:2px;height:38px}
+.x{border:0;background:none;color:#C2292E;font-size:20px;cursor:pointer}
+</style></head><body><main>
+<div class="top"><h1>Inventario</h1><button class="ibtn" data-theme-toggle></button></div>
+<nav class="seg" id="seg">
+  <button data-v="inicio" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+  <button data-v="buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Búsqueda</button>
+  <button data-v="historial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Historial</button>
+  <button data-v="config" id="segCfg" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M2 12h3m14 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Configuración</button>
+</nav>
+<div id="out"><div class="empty">Cargando inventario…</div></div>
+</main>
+<script type="module" src="app.js"></script>
+</body></html>

@@ -11,6 +11,7 @@ import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { COOKIE, NIVELES, rango, firmar, verificar, hashPin, checkPin, esAdmin, type Sesion, type Nivel } from "../lib/auth.mts";
 import { secreto } from "../lib/secreto.mts";
+import { inv } from "../lib/inv.mts";
 const ADMIN_NUM = () => Netlify.env.get("ADMIN_NUM") || ""; // solo para recrear el primer admin si se pierde (variable de entorno)
 
 const DIAS_SESION = 180;   // app en el celular: que no pida entrar seguido
@@ -92,6 +93,7 @@ export default async (req: Request, context: Context) => {
   const s = await verificar(context.cookies.get(COOKIE), await secreto("sesion"));
   if (!s) return err("Sesión vencida. Vuelve a entrar.", 401);
   const admin = esAdmin(s);
+  if (r0 === "inv") return inv(req, ruta.split("/").slice(1), s, admin);   // inventario de spare (netlify/lib/inv.mts)
 
   if (r0 === "yo") {
     const cfg = (await st("config").get("procNiveles", { type: "json" })) || {};
