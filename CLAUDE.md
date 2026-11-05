@@ -57,3 +57,11 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 - Fotos que faltan: Parameters/LensPlaceZ, config Moose con `#`, switch MIU + icono warmstart, Index station + Open camera, alineación manual/ZPlace, parámetros prefocus, modo Engineer, mantenimiento de dispensado, UVCureTime, place X/Y/Z, teach Z, purga, ARC, enfoque VIS.
 - Notas de Téc. M. de más fallas (242, 606 más allá de comunicación).
 - Dudas abiertas: ZPlace (¿cuánto más arriba?), orden MIU vs módulo de pogos, nombres exactos MTFExpected*, frecuencia del mantenimiento de dispensado, ajuste de VIS de la junta de entrenamiento.
+
+## Inventario de spare (`/inventario/`)
+- App dentro de JD Fallas (mismo login y usuarios). Front: `public/inventario/index.html` + `app.js`. Servidor: `netlify/lib/inv.mts`, colgado de `api.mts` (`/api/inv/*`).
+- Blobs `inventario`: `doc` = {seq, items} (un documento, escritura con etag + reintentos), `config` = áreas, categorías, líneas, gavetas {id, n, tipo alta|reja, niveles}, `m/<YYYY-MM>/<t>` = movimientos (alta, entrada, retiro, edicion, baja, deshacer, config).
+- Número de parte vacío → interno `AUT-00001…`. Duplicado (mismo PN + SN) se rechaza: usar Entrada.
+- Permisos: retirar = cualquiera; agregar / entrada / editar / lote = técnico o más; eliminar y configuración = admin con contraseña confirmada (`/api/admin-login`, la propia página la pide).
+- Gavetas dibujadas en SVG (`gavSVG`): alta gris de cajones y reja ancha de repisas; se toca el cajón/repisa para ubicar. Pendiente: secciones dentro del cajón (bins/cajas) dibujadas.
+- Ideas: etiquetas QR por material, foto por material, alertas de stock bajo por ntfy, migrar a Netlify DB si crece mucho.
