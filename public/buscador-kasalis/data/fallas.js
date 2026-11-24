@@ -28,7 +28,7 @@ export const FALLAS = [
      si:'[[m:Ya comunica → listo.]]', no:'[[m:Paso 5.]]'},
     {p:'[[m:Cambiar el interposer]]', si:'[[m:Ya comunica → listo.]]', no:'[[m:Paso 6.]]'},
     {p:'[[d:Revisar el plato / asiento del nido]]'},
-    {p:'[[m:Pogo pins de la estación]]', d:'[[m:Limpiar con trapito y alcohol. Presionarlos varias veces: si uno se queda abajo (no se retrae), está dañado. Si los pogos están bajos, ajustarlos para que toquen bien el plato.]]',
+    {p:'[[m:Pogo pins de la estación]]', d:'[[m:Limpiar con trapito y alcohol. Presionarlos varias veces: si uno se queda abajo (no se retrae), está dañado. Si los pogos están bajos, ajustarlos para que toquen bien el plato.]] [[d:No usar pinzas de metal en los pogos (en las fotos del manual sí las usan).]]',
      si:'[[m:Ya comunica → listo.]]', no:'[[m:Paso 8.]]'},
     {proc:'reiniciar-miu', p:'[[d:Reiniciar la MIU de la estación y hacer warmstart]]', d:'[[d:Cerrar Kasalis → apagar y prender la MIU con su switch → abrir warmstart (escritorio) → abrir Kasalis, inicializar y correr.]] [[l:Los microcortos en los pogos tiran las MIU; el warmstart las regresa.]] [[m:Hacerlo antes de desconectar pogos.]]',
      si:'[[d:Ya comunica → listo.]]', no:'[[m:Ya es algo serio. Paso 9.]]'},

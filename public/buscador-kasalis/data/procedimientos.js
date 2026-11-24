@@ -65,7 +65,11 @@ export const PROCS = {
     titulo:'Centrar offset X / Y del dispensado', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
     cuando:'[[d:El círculo sale desfasado respecto al lens adapter.]]',
     sabemos:['[[d:Los valores de X / Y dependen del modelo: mover poco a poco y validar.]]'],
-    pasos:[], necesito:['Dónde se cambian X / Y del arco o el offset','Cómo se prueba'],
+    pasos:[
+      {foto:'fotos/aportes/ejes-dispensado.jpg', texto:'[[m:Ubicar hacia dónde mover: viendo la pieza de frente en dispensado, −X arriba, +X abajo, −Y a la izquierda y +Y a la derecha.]]'},
+      {texto:'[[m:Ajustar de poco en poco, como de .20 a .50, y validar con una pieza antes de mover otra vez.]]'},
+    ],
+    necesito:['Dónde se cambian X / Y del arco o el offset','Cómo se prueba'],
   },
   'enfoque-vis': {
     titulo:'Enfocar y ajustar brillo de la cámara de inspección (VIS)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],

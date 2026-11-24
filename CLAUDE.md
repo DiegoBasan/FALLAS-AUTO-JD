@@ -6,7 +6,8 @@ Dueño / admin: Diego (ingeniero). Copia independiente de las apps `buscador-kas
 experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y se publica en **Netlify**.
 
 ## Reglas de trabajo
-- Push directo a `main` (Netlify despliega desde ahí). Mensajes de commit claros; sin identificadores de modelo.
+- **NO hacer deploy a Netlify por cada cambio.** Se juntan los cambios en `main` y se publica **una sola vez** cuando Diego diga "smn" (cada deploy gasta 15 de 300 créditos del mes; en nov-2026 se acabaron). Antes de publicar, probar todo con `netlify dev`.
+- Push directo a `main`. Mensajes de commit claros; sin identificadores de modelo.
 - UI en español, "operator friendly": directo, sin show, pasos completos visibles, iconos y separadores, funciona en celular con guantes y en compu.
 - Nunca inventar datos técnicos como si fueran de piso: lo que complementa Claude va marcado `{{…}}` (se ve en morado).
 - Validar con Playwright (Chromium en /opt/pw-browsers) a 390 px y 1280 px antes de subir; subir la versión de `CACHE` en `public/sw.js` cuando cambie algo.
@@ -72,3 +73,11 @@ Kasalis `#FF7F66` · Gecko `#8B5CF6` · Moose `#F08C00` · Scorpion `#2F6BFF` ·
 ## Créditos de Netlify (plan gratis: 300 al mes, si se acaban el sitio se pausa)
 - Cada deploy a producción = **15 créditos** → juntar cambios y publicar una sola vez; probar antes con `netlify dev`.
 - Ancho de banda 20 créditos/GB · cómputo 10 créditos/GB-hora · 2 créditos por cada 10,000 peticiones · formularios gratis.
+
+## MRB · registro de scrap (`/mrb/`)
+- Front: `public/mrb/index.html` + `app.js`. Servidor: `netlify/lib/mrb.mts` (`/api/mrb/*`). Blobs `mrb`: `r/<YYYY-MM>/<t>` = registro {turno, dia, num, nombre, motivo, sfr, tipoSfr, modelo, linea, piezas:[{tipo, serie}], papeleta (id de foto)}.
+- Registrar: qué fue (motivo), ¿SFR? + tipo de SFR (texto libre por ahora; Diego mandará la lista), piezas (Lente, Lens adapter, Sensor, Housing, Serializer, Otro) escaneadas, modelo, línea (opcional), **foto de la papeleta llena (obligatoria)**, comprimida a 1400 px JPEG 72 %.
+- Escáner: en celular (`pointer: coarse`) un recuadro chico con la cámara en vivo dentro del formulario (`escanerEnLinea` en `shared/escaner.js`), sigue leyendo y agrega cada pieza; en compu el campo queda listo para el escáner USB (escribe + Enter).
+- Turno por hora de la planta (UTC-6), calculado en el servidor: **420** L–J 6:00–18:00 · **421** L–J 18:00–6:00 · **422** V–D 6:00–18:00 · **N-FS** noche V–D (falta que Diego diga qué turno es). `dia` = día en que empezó el turno.
+- Métricas: piezas, promedio por día, % SFR, pieza más tirada; barras apiladas por día y turno (colores de turno validados para daltonismo) y rankings por turno, tipo de pieza, motivo, tipo de SFR, modelo, persona y línea. Registros con filtros, búsqueda por serie y CSV.
+- Borrar: el autor en las primeras 24 h o el admin. Pruebas locales: `PRUEBA_LOCAL=1` deja fijar la hora del registro (solo con `netlify dev`).
