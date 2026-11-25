@@ -1,6 +1,7 @@
 /* Inventario de spare: buscar (texto, escáner o por foto), agregar con foto, retirar, dar entrada, editar, historial y configuración.
    Datos en /api/inv/* (netlify/lib/inv.mts). Fotos en /api/foto (comprimidas en el celular antes de subir). */
-import {track} from '/shared/cuenta.js';
+import {track, yo} from '/shared/cuenta.js';
+yo().catch(()=>{});   // (muestra el aviso de MODO PRUEBA en deploys de prueba)
 import {escanear} from '/shared/escaner.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

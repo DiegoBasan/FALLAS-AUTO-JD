@@ -8,6 +8,7 @@ experimental `DiegoBasan/JD-AUTOMATION` (GitHub Pages). Este repo es privado y s
 ## Reglas de trabajo
 - **NO hacer deploy a Netlify por cada cambio.** Se juntan los cambios en `main` y se publica **una sola vez** cuando Diego diga "smn" (cada deploy gasta 15 de 300 créditos del mes; en nov-2026 se acabaron). Antes de publicar, probar todo con `netlify dev`.
 - Push directo a `main`. Mensajes de commit claros; sin identificadores de modelo.
+- **Probar sin gastar créditos:** los deploys de rama / preview cuestan 0. En esos deploys (y en `netlify dev`) los datos van a stores con `-prueba` (`netlify/lib/entorno.mts`; se comparten solo `usuarios` y `config`) y la app muestra el aviso "MODO PRUEBA". Producción (`context.deploy.context === "production"`) usa los stores reales.
 - UI en español, "operator friendly": directo, sin show, pasos completos visibles, iconos y separadores, funciona en celular con guantes y en compu.
 - Nunca inventar datos técnicos como si fueran de piso: lo que complementa Claude va marcado `{{…}}` (se ve en morado).
 - Validar con Playwright (Chromium en /opt/pw-browsers) a 390 px y 1280 px antes de subir; subir la versión de `CACHE` en `public/sw.js` cuando cambie algo.

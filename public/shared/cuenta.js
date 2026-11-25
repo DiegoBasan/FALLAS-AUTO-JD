@@ -15,7 +15,15 @@ export async function api(path, opt={}){
   const j = await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error || 'Error'); return j;
 }
 let _yo;
-export const yo = () => (_yo ||= api('yo').catch(e => { _yo = null; throw e; }));
+export const yo = () => (_yo ||= api('yo').then(r => { if(r.prueba) avisoPrueba(); return r; }).catch(e => { _yo = null; throw e; }));
+/* deploy de prueba (rama / preview): aviso fijo para no confundirlo con la app real */
+function avisoPrueba(){
+  if(document.getElementById('jdPrueba')) return;
+  const d = document.createElement('div'); d.id = 'jdPrueba';
+  d.textContent = 'MODO PRUEBA · datos aparte';
+  d.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 4px);transform:translateX(-50%);z-index:99;background:#E0A32E;color:#2a1d00;font:800 11.5px Inter,system-ui,sans-serif;letter-spacing:.03em;padding:4px 12px;border-radius:99px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.18)';
+  document.body.appendChild(d);
+}
 export const puedeVer = (nivelReq, miNivel) => rango(miNivel) >= rango(nivelReq);
 
 /* ---------- actividad ---------- */

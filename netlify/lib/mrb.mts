@@ -9,7 +9,8 @@
 import { getStore } from "@netlify/blobs";
 import type { Sesion } from "./auth.mts";
 
-const st = () => getStore({ name: "mrb", consistency: "strong" });
+import { store } from "./entorno.mts";
+const st = () => store("mrb");
 const json = (d: unknown, status = 200) => new Response(JSON.stringify(d), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const err = (m: string, s = 400) => json({ error: m }, s);
 const txt = (v: unknown, max = 300) => String(v ?? "").replace(/\u0000/g, "").trim().slice(0, max);

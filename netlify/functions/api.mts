@@ -17,7 +17,7 @@ const ADMIN_NUM = () => Netlify.env.get("ADMIN_NUM") || ""; // solo para recrear
 
 const DIAS_SESION = 180;   // app en el celular: que no pida entrar seguido
 const TIPOS = ["comentario", "foto", "correccion", "solucion", "duda"];
-const st = (name: string) => getStore({ name, consistency: "strong" });
+import { store as st, fijarEntorno, esPrueba } from "../lib/entorno.mts";
 const json = (d: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(d), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers } });
 const err = (msg: string, status = 400) => json({ error: msg }, status);
@@ -59,6 +59,7 @@ async function notificar(a: any, url: string) {
 }
 
 export default async (req: Request, context: Context) => {
+  fijarEntorno(context.deploy?.context);   // deploy de rama / preview → datos de prueba aparte
   const url = new URL(req.url);
   const ruta = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
   const [r0, r1, r2] = ruta.split("/");
@@ -102,7 +103,7 @@ export default async (req: Request, context: Context) => {
     const u = await getUsuario(s.num);
     if (!u || !u.activo) { context.cookies.delete({ name: COOKIE, path: "/" }); return err("Tu acceso ya no está activo.", 401); }
     const cfg = (await st("config").get("procNiveles", { type: "json" })) || {};
-    return json({ yo: { num: s.num, nombre: s.nombre, nivel: s.nivel, rango: rango(s.nivel), adm: admin }, procNiveles: cfg });
+    return json({ yo: { num: s.num, nombre: s.nombre, nivel: s.nivel, rango: rango(s.nivel), adm: admin }, procNiveles: cfg, prueba: esPrueba() });
   }
 
   if (r0 === "cambiar-pin" && M === "POST") {
